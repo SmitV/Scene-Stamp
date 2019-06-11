@@ -1,0 +1,15 @@
+.strip-container {
+}
+
+.strip-elements > div {
+  display: inline-block;
+}
+
+.strip-element {
+  width: 100px;
+  height: 50px;
+  text-align: center;
+  line-height: 50px;
+  border: 1px solid gray;
+  margin: 0 0.4rem;
+}

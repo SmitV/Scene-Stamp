@@ -1,0 +1,49 @@
+.scene-container {
+  border-bottom: 1px solid black;
+  margin: 5px 10px;
+  padding-bottom: 10px;
+}
+
+.scene-container > div:first-child {
+  font-weight: bold;
+  color: rgb(91, 122, 185);
+}
+
+.scene-container > div:last-child {
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+.scene-container > div:last-child > div:first-child {
+  float: left;
+}
+
+.scene-container > div:last-child > div:last-child {
+  margin-left: 235px;
+}
+
+.icons {
+  margin-right: 10px;
+}
+
+.scene-start-time {
+  font-weight: bold;
+}
+
+.icon-check {
+  color: rgb(79, 172, 58);
+}
+
+.icon-play {
+  color: rgb(167, 50, 48);
+}
+
+.icon-play:hover {
+  color: red;
+  cursor: pointer;
+}
+
+.icon-check:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}

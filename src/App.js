@@ -1,24 +1,24 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import Header from "./Header";
+import Home from "./Home";
+import Watch from "./Watch";
+
+import "../node_modules/video-react/dist/video-react.css";
+import "./App.css";
 
 function App() {
+  // <Route exact path='/manual' component={Manual}>
+
+  var categories = ["Funny", "Dramatic", "Inspirational", "Cool"];
+  var characters = ["Jon", "Tyrion", "Dany", "Sansa", "Arya"];
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Router>
+        <Header />
+        <Route exact path="/" component={Home} />
+        <Route exact path="/watch" component={Watch} />
+      </Router>
     </div>
   );
 }
