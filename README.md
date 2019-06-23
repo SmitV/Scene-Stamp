@@ -1,5 +1,14 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Python Script
+
+Call 'video_cut.py' to create the compilation video.
+
+For each clip needed in compilation video, use terminal command 
+
+python video_cut.py -f clip_source_file -c compilation_video -s start_time_in_seconds -d duration_in_seconds
+
+
 ## Available Scripts
 
 In the project directory, you can run:
