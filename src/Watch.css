@@ -1,3 +1,98 @@
 .watch-control {
   margin: 1rem 0;
 }
+
+.watch-container {
+  margin: 0 1rem;
+}
+
+.watch-elements-container {
+  margin: 1rem 0;
+}
+
+.watch-elements-container select {
+  min-width: 300px;
+}
+
+.watch-elements-container select:not(:first-of-type) {
+  margin-left: 1.3rem;
+}
+
+.watch-container .video {
+  width: 60%;
+  height: 40%;
+  float: left;
+}
+
+.watch-scenes {
+  padding-left: 1rem;
+  float: left;
+}
+
+.watch-modal {
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 100px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0, 0, 0); /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+}
+
+.watch-close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 25%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.watch-series-submit {
+  background-color: #4caf50; /* Green */
+  border: none;
+  color: white;
+  padding: 10px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  -webkit-transition-duration: 0.4s; /* Safari */
+  transition-duration: 0.4s;
+  cursor: pointer;
+  border: 2px solid #4caf50;
+}
+
+.watch-series-submit:hover {
+  background-color: white;
+  color: black;
+}
+
+.watch-modal-margin {
+  margin-top: 0.8rem;
+}
