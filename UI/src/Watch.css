@@ -96,3 +96,11 @@
 .watch-modal-margin {
   margin-top: 0.8rem;
 }
+
+.watch-container input {
+  padding: 10px;
+  border: 1px solid gray;
+  margin-top: 8px;
+  margin-right: 16px;
+  font-size: 17px;
+}

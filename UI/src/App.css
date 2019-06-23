@@ -2,7 +2,7 @@
   padding: 0 5rem;
 }
 
-input {
+.content-container input {
   padding: 10px;
   width: 300px;
   border: 1px solid gray;
