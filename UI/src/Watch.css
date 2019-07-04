@@ -19,8 +19,7 @@
 }
 
 .watch-container .video {
-  width: 60%;
-  height: 40%;
+  width: 50%;
   float: left;
 }
 
@@ -103,4 +102,53 @@
   margin-top: 8px;
   margin-right: 16px;
   font-size: 17px;
+}
+
+.watch-scenes {
+  list-style: none;
+}
+
+.watch-scenes li {
+  height: 20px;
+  border-bottom: 1px solid gray;
+  min-width: 300px;
+  padding: 5px 10px;
+}
+
+.watch-scenes li:hover {
+  cursor: pointer;
+  background-color: rgb(49, 122, 198);
+  color: white;
+}
+
+.watch-settings {
+  float: left;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.watch-strip {
+  list-style: none;
+  padding: 0;
+}
+
+.watch-strip button {
+  height: 40px;
+  width: 10%;
+  margin-right: 0.5rem;
+  border-radius: 5px;
+}
+
+.watch-save {
+  color: white;
+  border-radius: 5px;
+  background-color: rgb(190, 10, 10);
+  height: 40px;
+  width: 70px;
+  outline: none;
+}
+
+.watch-save:hover {
+  opacity: 0.8;
+  cursor: pointer;
 }

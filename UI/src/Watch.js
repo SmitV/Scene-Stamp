@@ -27,7 +27,8 @@ export default class Watch extends React.Component {
       episode_name: "",
       series_name: "",
       air_date: "",
-      season_num: ""
+      season_num: "",
+      timestamps: [{time: "1:31", selected: false}, {time: "1:31", selected: false}, {time: "1:31", selected: false}, {time: "1:31", selected: false}],
     };
   }
   componentDidMount() {
@@ -122,7 +123,6 @@ export default class Watch extends React.Component {
       .catch(err => console.log(err));
   }
   displayModal(type) {
-    console.log("hello");
     if (type == "Create New Series") {
       this.setState({ modalOpen: true, seriesFlag: true });
     } else {
@@ -141,6 +141,10 @@ export default class Watch extends React.Component {
     )
       .then(response => response.json())
       .then(data => this.prependAppendEpisodes(data));
+  }
+  addTimestamps() {
+    let data = this.state.timestamps;
+    data.push();
   }
 
   prependAppendEpisodes(data) {
@@ -236,9 +240,31 @@ export default class Watch extends React.Component {
         <div className="video">
           <Player ref="player" src={this.state.videoFileURL} />
         </div>
-        <div className="watch-scenes">
-          <Scene episode="Episode 5 Season 1" />
-          <Scene episode="Epside 1 Season 3" />
+        <ul className="watch-scenes">
+          {this.state.timestamps.map(element => (
+              <li onClick={this.handleTimeSelect}className={element.selected ? "watch-selected" : ""}>
+                <span>{element.time}</span>
+              </li>
+          ))}
+        </ul>
+        <div className="watch-settings">
+            <button>+ New Character</button>
+            <ul className="watch-strip">
+              {this.state.timestamps.map(element => (
+                <button>
+                  <span>{element.time}</span>
+                </button>
+              ))}
+            </ul>
+            <button>+ New Category</button>
+            <ul className="watch-strip">
+              {this.state.timestamps.map(element => (
+                <button>
+                  <span>{element.time}</span>
+                </button>
+              ))}
+            </ul>
+            <button className="watch-save">SAVE</button>
         </div>
       </div>
     );
