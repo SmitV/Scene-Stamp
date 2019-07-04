@@ -9,8 +9,10 @@ export default class Watch extends React.Component {
     this.handleVideoLoad = this.handleVideoLoad.bind(this);
     this.handleOnSelect = this.handleOnSelect.bind(this);
     this.handleClose = this.handleClose.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleSubmitSeries = this.handleSubmitSeries.bind(this);
+    this.handleSubmitEpisode = this.handleSubmitEpisode.bind(this);
     this.handleEpisodeSelect = this.handleEpisodeSelect.bind(this);
+    this.handleChange = this.handleChange.bind(this);
     this.state = {
       videoFileURL: "",
       videoFileObject: "",
@@ -20,11 +22,21 @@ export default class Watch extends React.Component {
       episodeOptions: [{ episode_name: "Select Episode" }],
       modalOpen: false,
       seriesFlag: true,
-      currSeriesId: -1
+      currSeriesId: -1,
+      episode_num: "",
+      episode_name: "",
+      series_name: "",
+      air_date: "",
+      season_num: ""
     };
   }
   componentDidMount() {
     this.queryForSeries();
+  }
+  handleChange(evt) {
+    // check it out: we get the evt.target.name (which will be either "email" or "password")
+    // and use it to target the key on our `state` object with the same name, using bracket syntax
+    this.setState({ [evt.target.name]: evt.target.value });
   }
   handleVideoLoad(e) {
     let files = e.target.files;
@@ -59,7 +71,56 @@ export default class Watch extends React.Component {
       this.displayModal(e.target.value);
     }
   }
-  handleSubmit(e) {}
+  handleSubmitSeries() {
+    let seriesData = this.state.seriesOptions;
+    fetch(
+      "https://scene-stamp-server.herokuapp.com/newSeries?series_name=" +
+        this.state.series_name
+    )
+      .then(res => res.json())
+      .then(data => seriesData.push(data))
+      .then(data =>
+        this.setState({
+          seriesOptions: seriesData,
+          modalOpen: false,
+          seriesName: ""
+        })
+      )
+      .catch(err => console.log(err));
+  }
+  handleSubmitEpisode() {
+    let episodeData = this.state.episodeOptions;
+    let currQuery = this.state.episode_name;
+    if (this.state.episode_num.length != "") {
+      currQuery += "&episode=" + this.state.episode_num;
+    }
+    if (this.state.season_num.length != "") {
+      currQuery += "&season=" + this.state.season_num;
+    }
+    if (this.state.air_date.length != "") {
+      currQuery += "&episode=" + this.state.air_date;
+    }
+    fetch(
+      "https://scene-stamp-server.herokuapp.com/newEpisode?series_id=" +
+        this.state.currSeriesId +
+        "&episode_name=" +
+        this.state.series_name +
+        currQuery
+    )
+      .then(res => res.json())
+      .then(data => episodeData.push(data))
+      .then(data =>
+        this.setState({
+          episodeOptions: episodeData,
+          modalOpen: false,
+          episode_num: "",
+          season_num: "",
+          episode_name: "",
+          air_date: ""
+        })
+      )
+      .catch(err => console.log(err));
+  }
   displayModal(type) {
     console.log("hello");
     if (type == "Create New Series") {
@@ -82,7 +143,6 @@ export default class Watch extends React.Component {
       .then(data => this.prependAppendEpisodes(data));
   }
 
-  // 50519
   prependAppendEpisodes(data) {
     data.unshift({ episode_name: "Create New Episode" });
     data.unshift({ episode_name: "Select Episode" });
@@ -106,11 +166,15 @@ export default class Watch extends React.Component {
                     &times;
                   </span>
                   <div>
-                    <input placeholder="Enter Series Name.." />
+                    <input
+                      onChange={this.handleChange}
+                      name="series_name"
+                      placeholder="Enter Series Name.."
+                    />
                     <div className="watch-modal-margin">
                       <button
                         className="watch-series-submit"
-                        onClick={this.onSubmit}
+                        onClick={this.handleSubmitSeries}
                       >
                         Submit
                       </button>
@@ -123,14 +187,30 @@ export default class Watch extends React.Component {
                     &times;
                   </span>
                   <div className="watch-modal-episodes">
-                    <input placeholder="Enter Episode Name..*" />
-                    <input placeholder="Enter Episode Number.." />
-                    <input placeholder="Enter Season Number.." />
-                    <input placeholder="Enter Air Date.." />
+                    <input
+                      onChange={this.handleChange}
+                      name="episode_name"
+                      placeholder="Enter Episode Name..*"
+                    />
+                    <input
+                      onChange={this.handleChange}
+                      name="episode_num"
+                      placeholder="Enter Episode Number.."
+                    />
+                    <input
+                      onChange={this.handleChange}
+                      name="season_num"
+                      placeholder="Enter Season Number.."
+                    />
+                    <input
+                      onChange={this.handleChange}
+                      name="air_date"
+                      placeholder="Enter Air Date.."
+                    />
                     <div className="watch-modal-margin">
                       <button
                         className="watch-series-submit"
-                        onClick={this.onSubmit}
+                        onClick={this.handleSubmitEpisode}
                       >
                         Submit
                       </button>
