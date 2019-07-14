@@ -2,7 +2,6 @@ import React from "react";
 import Scene from "./Scene";
 import Strip from "./Strip";
 import { Player } from "video-react";
-import video from "./videos/dobrik.mp4";
 import "./App.css";
 
 export default class Home extends React.Component {
@@ -12,6 +11,7 @@ export default class Home extends React.Component {
   render() {
     var categories = ["Funny", "Dramatic", "Inspirational", "Cool"];
     var characters = ["Jon", "Tyrion", "Dany", "Sansa", "Arya"];
+    var path = require("./videos/36693.mp4");
     return (
       <div className="content-container">
         <h2>Select Scenes</h2>
@@ -31,7 +31,7 @@ export default class Home extends React.Component {
           <div className="scenes-picked" />
         </div>
         <div className="video-styles">
-          <Player playsInline src={video} startTime={90} />
+          <Player playsInline src={path} startTime={90} />
         </div>
         <div>
           <Strip title="Categories" elements={categories} />

@@ -26,6 +26,8 @@
 .watch-scenes {
   padding-left: 1rem;
   float: left;
+  max-height: 400px;
+  overflow: scroll;
 }
 
 .watch-modal {
@@ -150,5 +152,15 @@
 
 .watch-save:hover {
   opacity: 0.8;
+  cursor: pointer;
+}
+
+.selected {
+  background-color: rgb(49, 122, 198);
+  color: white;
+  outline: none;
+}
+
+.watch-settings button:hover {
   cursor: pointer;
 }
