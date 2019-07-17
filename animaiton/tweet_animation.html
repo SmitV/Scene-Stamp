@@ -10,13 +10,13 @@
 	</script>
 </head>
 <body>
-	<button onClick="fadeInAnimation(function(){console.log('done');})"> Draw</button>
+	<button onClick="doAnimation(function(){console.log('done');})"> Draw</button>
 	<select id="styleOption">
 	  <option value="light">Light</option>
 	  <option value="dark">Dark</option>
 	</select>
 	<canvas id="canvas" width="1000" height="400"></canvas><br>
-	Username:<input type="text" name="username"></input><br>
-	Text:<input type="text" name="username" width="500" height="400"></input><br>
+	Username:<input type="text" id="username"></input><br>
+	Text:<textarea type="text" id="text" rows="5" columns="40"></textarea><br>
 </body>
 </html>

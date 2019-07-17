@@ -59,25 +59,31 @@
 		
 		let text_tweet = "the city just comes together.  the 9 million residents become 9 million roommates.  people look out for one another.  everyone in the street is stuck together, dealing with the same shit, working to get through it.everyone in the street in."
 
-		function reset(){
+		function resetAnimationVariables(){
 			DONE_ANIMATION =false;
 			rectangle = {
-			x : 0,
-			y : 0,
-			width : 0,
-			height:0,
-			completedAnimationDuration:[],
-			render:
-				function(ctx){
-					ctx.save(); 
-					ctx.clearRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT) 
-					ctx.fillStyle = STYLE.background_color;  
-					ctx.strokeStyle = STYLE.border_color;
-					ctx.lineWidth = 3;
-					roundRect(ctx, this.x,this.y , this.width, this.height);
-					ctx.restore(ctx);
+				x : 0,
+				y : 0,
+				width : 0,
+				height:0,
+				completedAnimationDuration:[],
+				render:
+					function(ctx){
+						ctx.save(); 
+						ctx.clearRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT) 
+						ctx.fillStyle = STYLE.background_color;  
+						ctx.strokeStyle = STYLE.border_color;
+						ctx.lineWidth = 3;
+						roundRect(ctx, this.x,this.y , this.width, this.height);
+						ctx.restore(ctx);
+					}
 				}
-			}
+
+			var canvas = document.getElementById('canvas');
+			ctx = canvas.getContext('2d')
+
+			startTime = Date.now()
+			currentTime = 0
 
 			textBoxes = {}
 			drawBoxes = {}
@@ -130,14 +136,15 @@
 			textBoxes.username.y = rectangle.y+margin +iconSize/2
 			textBoxes.username.maxWidth = TWEET_WIDTH - (margin * 2)
 			textBoxes.username.lineHeight = fontSize
-			textBoxes.username.text = '@username'
 			
 			textBoxes.text = createTextBox()
 			textBoxes.text.x = rectangle.x+margin
 			textBoxes.text.y = rectangle.y + margin+iconSize+breakMargin 
 			textBoxes.text.maxWidth = TWEET_WIDTH - (margin * 2)
 			textBoxes.text.lineHeight = fontSize
-			textBoxes.text.text = text_tweet
+
+			Object.keys(textBoxes).forEach(function(key){textBoxes[key].text = (document.getElementById(key).value ? document.getElementById(key).value : ' ')})
+			textBoxes.username.text = '@'+textBoxes.username.text ;
 
 			drawBoxes.twitterIcon = createImgBox();
 			drawBoxes.twitterIcon.x = rectangle.x+margin + usernameMargin/2
@@ -168,25 +175,73 @@
 
 		function getWrapTextHeight(ctx, text, maxWidth, lineHeight){
 			ctx.font = fontSize+"px Arial";
-			var totalHeight = 0;
-			var words = text.split(' ');
-	        var line = '';
 
-	        for(var n = 0; n < words.length; n++) {
-	          var testLine = line + words[n] + ' ';
-	          var metrics = ctx.measureText(testLine);
-	          var testWidth = metrics.width;
-	          if (testWidth > maxWidth && n > 0) {
-	            totalHeight += lineHeight;
-	            line = words[n] + ' ';
-	          }
-	          else {
-	            line = testLine;
-	          }
-	        }
-	        return totalHeight + lineHeight;
+			var currentLine = ''
+			var totalHeight = 0;
+			var lines = text.split('\n')
+			lines.forEach(function(line){
+				if(line == ''){
+					totalHeight += lineHeight * 2;
+					currentLine  = ''
+				}
+				else{
+					var words = line.split(' ');
+
+					for(var n = 0; n < words.length; n++) {
+			         	var testLine = currentLine + words[n] + ' ';
+			          	var metrics = ctx.measureText(testLine);
+			          	var testWidth = metrics.width;
+			          	if (testWidth > maxWidth && n > 0) {
+			            	totalHeight += lineHeight;
+			            	currentLine = words[n] + ' ';
+			          	}
+			          	else {
+			            	currentLine = testLine;
+			          	}
+			        }
+				}
+			});
+	       	return totalHeight + lineHeight;
 		}
 
+		function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+			ctx.font = fontSize+"px Arial";
+
+			var currentLine = ''
+			var lines = text.split('\n')
+			lines.forEach(function(line){
+				if(line == ''){
+					console.log('empty line')
+					//print current line
+					ctx.fillText(currentLine, x, y);
+					//update spot
+		            y += lineHeight;
+		            ctx.fillText('',x,y);
+		            y += lineHeight;
+		            currentLine = ''
+				}
+				else{
+					console.log('line :'+line)
+					var words = line.split(' ');
+					for(var n = 0; n < words.length; n++) {
+			         	var testLine = currentLine + words[n] + ' ';
+			          	var metrics = ctx.measureText(testLine);
+			          	var testWidth = metrics.width;
+			          	if (testWidth > maxWidth && n > 0) {
+			          		ctx.fillText(currentLine, x, y);
+			            	y += lineHeight;
+			            	currentLine = words[n] + ' ';
+			          	}
+			          	else {
+			          		currentLine = testLine
+			          	}
+			        }
+			        ctx.fillText(currentLine, x, y);
+				}
+			});
+		}
+
+		/*
 		function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 			ctx.font = fontSize+"px Arial";
 	    	var words = text.split(' ');
@@ -207,6 +262,7 @@
 	        }
 	        ctx.fillText(line, x, y);
 	      }
+	      */
 
 		function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
 		  if (typeof stroke == "undefined" ) {
@@ -270,7 +326,6 @@
 				callback()
 				return
 			}
-			console.log(rectangle)
 			var squareWidth = 10;
 			rectangle.y = SCREEN_HEIGHT - getStep(duration, (SCREEN_HEIGHT)/2 + TWEET_HEIGHT/2);
 			rectangle.width = getStep(duration,squareWidth);
@@ -291,27 +346,20 @@
 				callback()
 				return
 			}
-	
 		}
 
+		function doAnimation(callback){
+			resetAnimationVariables();
 
-	    function fadeInAnimation(callback){
-	    	reset();
+			STYLE = STYLE_OPTIONS[document.getElementById('styleOption').value]
+			
+			console.log(document.getElementById('text').value.split('\n'))
+			document.getElementById('canvas').style.background = "#000000"
+			fadeInAnimation(callback);
 
-	    	STYLE = STYLE_OPTIONS[document.getElementById('styleOption').value]
-
-			startTime = Date.now()
-			currentTime = 0
-
-			var canvas = document.getElementById('canvas');
-			ctx = canvas.getContext('2d')
-			canvas.style.background = "#000000"
-			requestAnimationFrame(function(){
-				renderLoop(callback)
-			});
 		}
 
-		function renderLoop(callback) {
+		function fadeInAnimation(callback) {
 			if (DONE_ANIMATION) {
 				console.log("ANIMATION DONE");
 				callback()
@@ -354,7 +402,7 @@
 				
 
 			requestAnimationFrame(function(){
-				renderLoop(callback)
+				fadeInAnimation(callback)
 			});
 			
 		}
