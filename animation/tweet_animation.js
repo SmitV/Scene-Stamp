@@ -1,25 +1,17 @@
-/*
-			For any animation function , we pass in the duration
-				1) animation check
-					-if Date.now() - startTime(global) is greater than the passed in duration , call callback
-				2)calculate step
-					-[(Date.now() - startTime) / animation time(passed)] * the desired length
-		*/
 
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
 var ctx;
 var startTime;
-var currentTime;
 var rectangle;
 var textBoxes;
 var drawBoxes;
 
-var DONE_ANIMATION;
 
 var fontSize = 20;
 var margin = 30
 var breakMargin = 20
+var squareWidth = 10;
 
 var iconSize = {
 	width: 30,
@@ -46,6 +38,14 @@ let STYLE_OPTIONS = {
 	}
 }
 
+var ANIMATION_TIMES = {
+		boxUp: 200,
+		increaseWidth: 500,
+		inceaseHeight: 300,
+		fadeInText: 200,
+		wait:2000
+	}
+
 let STYLE = STYLE_OPTIONS.light;
 
 
@@ -58,12 +58,15 @@ let STYLE = STYLE_OPTIONS.light;
 	//canvas.style.height = SCREEN_HEIGHT+"px"
 }*/
 
-
-
-let text_tweet = "the city just comes together.  the 9 million residents become 9 million roommates.  people look out for one another.  everyone in the street is stuck together, dealing with the same shit, working to get through it.everyone in the street in."
+function sampleText(){
+	document.getElementById('username').value = "bballbreakdown"
+	document.getElementById('text').value = "Can D Angelo Russell fit with Steph Curry and the Warriors?\nCredit:@bballbreakdown"
+	doAnimation(function(){
+		console.log('done')
+	})
+}
 
 function resetAnimationVariables() {
-	DONE_ANIMATION = false;
 	rectangle = {
 		x: 0,
 		y: 0,
@@ -85,11 +88,11 @@ function resetAnimationVariables() {
 	ctx = canvas.getContext('2d')
 
 	startTime = Date.now()
-	currentTime = 0
 
 	textBoxes = {}
 	drawBoxes = {}
 }
+
 
 function createTextBox() {
 	return {
@@ -170,7 +173,6 @@ function updateTweetHeight(callback) {
 	var totalHeight = 0;
 
 	Object.keys(textBoxes).forEach(function(a) {
-
 		totalHeight += getWrapTextHeight(ctx, textBoxes[a].text, textBoxes[a].maxWidth, textBoxes[a].lineHeight)
 	})
 	TWEET_HEIGHT = totalHeight + (margin * 2) + breakMargin;
@@ -182,7 +184,7 @@ function updateTweetHeight(callback) {
 function getWrapTextHeight(ctx, text, maxWidth, lineHeight) {
 	ctx.font = fontSize + "px Arial";
 
-	
+
 	var totalHeight = 0;
 	var lines = text.split('\n')
 	lines.forEach(function(line) {
@@ -228,29 +230,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 	});
 }
 
-/*
-		function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-			ctx.font = fontSize+"px Arial";
-	    	var words = text.split(' ');
-	        var line = '';
-
-	        for(var n = 0; n < words.length; n++) {
-	          var testLine = line + words[n] + ' ';
-	          var metrics = ctx.measureText(testLine);
-	          var testWidth = metrics.width;
-	          if (testWidth > maxWidth && n > 0) {
-	            ctx.fillText(line, x, y);
-	            line = words[n] + ' ';
-	            y += lineHeight;
-	          }
-	          else {
-	            line = testLine;
-	          }
-	        }
-	        ctx.fillText(line, x, y);
-	      }
-	      */
-
 function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
 	if (typeof stroke == "undefined") {
 		stroke = true;
@@ -281,54 +260,68 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
 }
 
 function getStep(duration, maxValue) {
-	return Math.min(((Date.now() - startTime - rectangle.completedAnimationDuration.reduce((a, b) => a + b, 0)) / duration) * maxValue, maxValue)
+	return ((Date.now() - startTime - rectangle.completedAnimationDuration.reduce((a, b) => a + b, 0)) / duration) * maxValue
 }
 
-function panWidth(duration, callback) {
+function panWidth(duration, fadeIn, callback) {
 
 	if (shouldFinishAnimation(duration)) {
 		callback()
 		return
 	}
-
-	rectangle.width = getStep(duration, TWEET_WIDTH);
+	if (fadeIn) {
+		rectangle.width = getStep(duration, TWEET_WIDTH);
+	} else {
+		rectangle.width = TWEET_WIDTH - getStep(duration, TWEET_WIDTH);
+	}
 	rectangle.render(ctx);
 }
 
-function panHeight(duration, callback) {
+function panHeight(duration, fadeIn, callback) {
 
 	if (shouldFinishAnimation(duration)) {
 		callback()
 		return
 	}
+	if (fadeIn) {
+		rectangle.height = getStep(duration, TWEET_HEIGHT);
+	} else {
+		rectangle.height = TWEET_HEIGHT - getStep(duration, TWEET_HEIGHT-squareWidth);
+	}
 
-	rectangle.height = getStep(duration, TWEET_HEIGHT);
 	rectangle.render(ctx);
 }
 
 
-function littleBoxUp(duration, callback) {
+function littleBoxUp(duration, fadeIn, callback) {
 
 	if (shouldFinishAnimation(duration)) {
 		callback()
 		return
 	}
-	var squareWidth = 10;
-	rectangle.y = SCREEN_HEIGHT - getStep(duration, (SCREEN_HEIGHT) / 2 + TWEET_HEIGHT / 2);
-	rectangle.width = getStep(duration, squareWidth);
-	rectangle.height = getStep(duration, squareWidth);
+	var maxHeight = (SCREEN_HEIGHT) / 2 + TWEET_HEIGHT / 2
+
+	if (fadeIn) {
+		rectangle.y = SCREEN_HEIGHT - getStep(duration, maxHeight);
+		rectangle.width = getStep(duration, squareWidth);
+		rectangle.height = getStep(duration, squareWidth);
+	} else {
+		rectangle.y = maxHeight + getStep(duration, SCREEN_HEIGHT-maxHeight);
+		rectangle.width = squareWidth - getStep(duration, squareWidth);
+		rectangle.height = squareWidth - getStep(duration, squareWidth);
+	}
 	rectangle.render(ctx);
 }
 
-function addText(duration, callback) {
+function addText(duration, fadeIn, callback) {
 
 	rectangle.render(ctx);
 
 	Object.keys(textBoxes).forEach(function(key) {
-		textBoxes[key].alpha = getStep(duration, 1)
+		textBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : textBoxes[key].alpha - getStep(duration, 1))
 	})
 	Object.keys(drawBoxes).forEach(function(key) {
-		drawBoxes[key].alpha = getStep(duration, 1)
+		drawBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : drawBoxes[key].alpha - getStep(duration, 1))
 	})
 	Object.keys(drawBoxes).forEach(function(key) {
 		drawBoxes[key].render(ctx)
@@ -336,6 +329,8 @@ function addText(duration, callback) {
 	Object.keys(textBoxes).forEach(function(key) {
 		textBoxes[key].render(ctx)
 	})
+
+
 
 	if (shouldFinishAnimation(duration)) {
 		callback()
@@ -347,43 +342,83 @@ function doAnimation(callback) {
 	resetAnimationVariables();
 
 	STYLE = STYLE_OPTIONS[document.getElementById('styleOption').value]
+	ANIMATION_TIMES.wait = parseInt(document.getElementById('duration').value) * 1000
 
 	document.getElementById('canvas').style.background = "#000000"
-	fadeInAnimation(callback);
+	fadeInAnimation(function() {
+		setTimeout(function() {
+			startTime = Date.now()
+
+			fadeOutAnimation(function(){
+				ctx.clearRect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT);
+				callback()
+			})
+		}, ANIMATION_TIMES.wait)
+	});
+
+}
+
+function fadeOutAnimation(callback) {
+
+	var done = false;
+	ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	rectangle.completedAnimationDuration = []
+
+	var fadeIn = false;
+
+	setUpTextBoxes(function() {
+		updateTweetHeight(function() {
+			addText(ANIMATION_TIMES.fadeInText, fadeIn, function() {
+				rectangle.completedAnimationDuration.push(ANIMATION_TIMES.fadeInText)
+				panHeight(ANIMATION_TIMES.inceaseHeight, fadeIn, function() {
+					rectangle.completedAnimationDuration.push(ANIMATION_TIMES.inceaseHeight)
+					panWidth(ANIMATION_TIMES.increaseWidth, fadeIn, function() {
+						rectangle.completedAnimationDuration.push(ANIMATION_TIMES.increaseWidth)
+						littleBoxUp(ANIMATION_TIMES.boxUp, fadeIn, function() {
+							done = true;
+							return
+						})
+					})
+				})
+			});
+		})
+	})
+
+
+	if (!done) {
+		requestAnimationFrame(function() {
+			fadeOutAnimation(callback)
+		});
+	} else {
+		callback()
+	}
+
 
 }
 
 function fadeInAnimation(callback) {
-	if (DONE_ANIMATION) {
-		console.log("ANIMATION DONE");
-		callback()
-		return
-	}
+
+	rectangle.x = (SCREEN_WIDTH - TWEET_WIDTH) / 2
+
+	var done = false;
 	ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	rectangle.completedAnimationDuration = []
 
+	var fadeIn = true;
 
-	//setup for little box
-	rectangle.x = (SCREEN_WIDTH - TWEET_WIDTH) / 2
-
-	var ANIMATION_TIMES = {
-		boxUp: 300,
-		increaseWidth: 500,
-		inceaseHeight: 300,
-		fadeInText: 200
-	}
 
 	setUpTextBoxes(function() {
 		updateTweetHeight(function() {
-			littleBoxUp(ANIMATION_TIMES.boxUp, function() {
+			littleBoxUp(ANIMATION_TIMES.boxUp, fadeIn, function() {
 				rectangle.completedAnimationDuration.push(ANIMATION_TIMES.boxUp)
-				panWidth(ANIMATION_TIMES.increaseWidth, function() {
+				panWidth(ANIMATION_TIMES.increaseWidth, fadeIn, function() {
 					rectangle.completedAnimationDuration.push(ANIMATION_TIMES.increaseWidth)
-					panHeight(ANIMATION_TIMES.inceaseHeight, function() {
+					panHeight(ANIMATION_TIMES.inceaseHeight, fadeIn, function() {
 						rectangle.completedAnimationDuration.push(ANIMATION_TIMES.inceaseHeight)
 						setUpTextBoxes(function() {
-							addText(ANIMATION_TIMES.fadeInText, function() {
-								DONE_ANIMATION = true;
+							addText(ANIMATION_TIMES.fadeInText, fadeIn, function() {
+								done = true;
+								return
 							})
 						})
 					})
@@ -394,9 +429,12 @@ function fadeInAnimation(callback) {
 	})
 
 
-
-	requestAnimationFrame(function() {
-		fadeInAnimation(callback)
-	});
+	if (!done) {
+		requestAnimationFrame(function() {
+			fadeInAnimation(callback)
+		});
+	} else {
+		callback()
+	}
 
 }
