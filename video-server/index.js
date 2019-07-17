@@ -1,8 +1,12 @@
 var express = require('express');
-var testing_action = require('./testing_action.js');
-var production_action = require('./production/production_actions.js');
-var app = express();
+const bodyParser = require('body-parser'); 
 
+var action = require('./action.js')
+var taskScript = require('./taskScript.js')
+
+var app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.all('*', function(req, res, next) {
      var origin = req.get('origin'); 
@@ -16,13 +20,67 @@ app.all('*', function(req, res, next) {
 var endpoints = [
 	{
 		//will rename episode to new  
-		url : 'renameEpisode', 
+		url : 'linkToEpisode', 
 		action : function(req, res){
-					actions.getVideoForEpisode(function(data){
-						res.json(data);
-					});
-				}
+			console.log(req.body)
+			action.get_linkVideoToEpisode(req.body, function(data){
+				res.json(data);
+			});
+		}
 	},
+
+	{
+		//will rename episode to new  
+		url : 'createCompilation', 
+		action : function(req, res){
+			action.get_CreateCompilation(req.body, function(data){
+				res.json(data);
+			});
+		}
+	},
+	{
+		url : 'getUnlinkedVideos', 
+		action : function(req, res){
+			action.get_allUnlinkedVideos(function(data){
+				res.json(data);
+			});
+		}
+	},
+	{
+		url : 'getLinkedVideos', 
+		action : function(req, res){
+			action.get_allLinkedVides(function(data){
+				res.json(data);
+			});
+		}
+	},
+	{
+		url : 'getCompilationVideos', 
+		action : function(req, res){
+			action.get_allCompilationVideos(function(data){
+				res.json(data);
+			});
+		}
+	},
+	{
+		url : 'compilation', 
+		action : function(req, res){
+			action.get_compilation(req.query, function(data){
+				res.pipe(data);
+			});
+		}
+	},
+
+	{
+		url : 'getCompilation', 
+		action : function(req, res){
+			action.get_CompilationVideo(req.query, res, function(data){
+				res.json(data);
+			});
+		}
+	},
+
+]
 
 
 endpoints.forEach(function(endpoint){
@@ -33,5 +91,10 @@ endpoints.forEach(function(endpoint){
 
 
 var server = app.listen(process.env.PORT || 8081, function () {   
-   console.log("Scene Stamp Server Running @ port ",this.address().port )
+   console.log("Scene Stamp Video Server Running @ port ",this.address().port )
+
+   var tasks = setInterval(function(){
+   	taskScript.updateTasks()
+   }, 2000);
+
 })

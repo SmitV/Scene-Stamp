@@ -1,0 +1,22 @@
+{
+  "name": "video-server",
+  "version": "1.0.0",
+  "description": "stores videos for scene stamp ; api's to store episode files and create compilation videos",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "child_process": "^1.0.2",
+    "express": "^4.17.1",
+    "ffmetadata": "^1.5.0",
+    "ffmpeg": "^0.0.4",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
+    "python-shell": "^1.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style type='text/css'>
+		canvas{
+			border: 4px solid;
+		}
+	</style>
+	<script src="tweet_animation.js">
+	</script>
+</head>
+<body>
+	<button onClick="fadeInAnimation(function(){console.log('done');})"> Draw</button>
+	<select id="styleOption">
+	  <option value="light">Light</option>
+	  <option value="dark">Dark</option>
+	</select>
+	<canvas id="canvas" width="1000" height="400"></canvas><br>
+	Username:<input type="text" name="username"></input><br>
+	Text:<input type="text" name="username" width="500" height="400"></input><br>
+</body>
+</html>
