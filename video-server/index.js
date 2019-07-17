@@ -59,15 +59,7 @@ var endpoints = [{
 				res.json(data);
 			});
 		}
-	}, {
-		url: 'compilation',
-		action: function(req, res) {
-			action.get_compilation(req.query, function(data) {
-				res.pipe(data);
-			});
-		}
 	},
-
 	{
 		url: 'getCompilation',
 		action: function(req, res) {

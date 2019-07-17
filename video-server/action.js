@@ -108,30 +108,30 @@ module.exports = {
 	},
 
 	//remove all in progress video files , denoted with suffix 'ip_'
-	removeInProgressVideos(callback){
+	removeInProgressVideos(callback) {
 		var t = this
 		var errorOccured = false;
 
-		function removeFile(err){
-			if(err){
+		function removeFile(err) {
+			if (err) {
 				t._generateServerError(err);
 				errorOccured = true;
 			}
 		}
 
 		fs.readdir('./', (err, files) => {
-			if(err){
+			if (err) {
 				t._generateServerError(err)
 				return
 			}
-			files.filter(function(file){
+			files.filter(function(file) {
 				return file.includes('ip_');
-			}).forEach(function(file){
-				fs.unlink('./'+file, callback)
+			}).forEach(function(file) {
+				fs.unlink('./' + file, callback)
 			})
 		})
 
-		if(!errorOccured) callback()
+		if (!errorOccured) callback()
 	},
 
 	_getAllUnlinkedVideos(baton, callback) {
@@ -290,58 +290,6 @@ module.exports = {
 			})
 		})
 	},
-
-	get_compilation(params, orig_callback) {
-		var t = this
-		var baton = t._getBaton("get_compilation", params, orig_callback);
-
-		function dataLoader(callback) {
-			t._getAllCompilationVideos(baton, function(comp_videos) {
-				callback(comp_videos)
-			})
-		}
-
-		function validateParams(params, compilation_videos, callback) {
-			if (!compilation_videos.map(function(comp) {
-					return comp[0].toLowerCase()
-				}).includes(params.compilation_name.toLowerCase())) {
-				baton.setError({
-					episode_id: params.episode_id,
-					public_message: 'Invalid Params:compilation does not exist'
-				})
-				baton.throwError()
-				return
-			} else {
-				callback(params.compilation_name)
-			}
-		}
-
-		function makeResponse(comp_file, currentFrames) {
-			ffmetadata.read(comp_file, function(err, data) {
-				if (err) console.error("Error reading metadata in response :", err);
-				else {
-					if (currentFrames == data.total_frames) {
-						baton.callOrigCallback(fs.createWriteStream(comp_file))
-					} else {
-						baton.callOrigCallback({
-							'progress': (currentFrames / data.total_frames) * 100
-						})
-					}
-				}
-			});
-		}
-
-		dataLoader(function(comp_videos) {
-			validateParams(params, comp_videos, function(comp_file) {
-				var compilation_path = COMPILATION_FOLDER + "/" + comp_file + ".mp4"
-				t._callNumberFrames(compilation_path, 0, 0, true, function(numFrames) {
-					makeResponse(compilation_path, numFrames)
-				})
-			})
-		})
-	},
-
-
 	_readTaskFile(baton, callback) {
 		fs.readFile(TASK_FILE_PATH, function(err, data) {
 			if (err) {
@@ -358,7 +306,7 @@ module.exports = {
 	},
 
 	_updateTaskFile(baton, comp_name, timestamps, callback) {
-
+		var t = this;
 		function updateTaskFile(currentTasks, callback) {
 			currentTasks[comp_name] = {
 				timestamps: timestamps
@@ -377,9 +325,10 @@ module.exports = {
 			})
 		}
 
-		this._readTaskFile(baton, function(data) {
-			updateTaskFile(data, callback)
-		})
+			t._readTaskFile(baton, function(data) {
+				updateTaskFile(data, callback)
+			})
+	
 	},
 
 	get_CompilationVideo(params, res, orig_callback) {
@@ -431,105 +380,6 @@ module.exports = {
 		})
 	},
 
-
-
-	_createCompilationVideo(timestamps, compilation_name) {
-		var t = this;
-		var compilation_path = COMPILATION_FOLDER + "/" + compilation_name + ".mp4"
-
-		function createTasks(callback) {
-			var tasks = [
-				[timestamps[timestamps.length - 1].episode_name, compilation_name, timestamps[timestamps.length - 1].start_time, timestamps[timestamps.length - 1].duration]
-			]
-
-			for (var i = timestamps.length - 2; i >= 0; i--) {
-				tasks.push([timestamps[i].episode_name, compilation_name, timestamps[i].start_time, timestamps[i].duration])
-			}
-
-			callback(tasks.reverse())
-		}
-
-		function getTotalFrames(tasks, currentTotal, callback) {
-			callback(100)
-			/*
-
-			if(tasks.length == 0){
-				callback(currentTotal) 
-			}
-			else{
-				var currentTask = tasks[0]
-				tasks.shift();
-				t._callNumberFrames(LINKED_FOLDER+"/"+currentTask[0],currentTask[2],currentTask[3],false, function(num){
-					currentTotal += num
-					getTotalFrames(tasks, currentTotal, callback)
-				})
-			} */
-		}
-
-		function callScripts(tasks) {
-			if (tasks.length == 0) {
-				console.log('all tasks done')
-				//compilation video created
-				return
-			}
-			var currentTask = tasks[0]
-			console.log(currentTask[0])
-			t._callVideoCut(currentTask[0], currentTask[1], currentTask[2], currentTask[3], function() {
-				tasks.shift();
-				callScripts(tasks)
-			})
-		}
-
-		function updateMetadata(compilation_path, total_frames, callback) {
-			var data = {
-				total_frames: total_frames
-			};
-			ffmetadata.write(compilation_path, data, function(err) {
-				if (err) console.error("Error writing metadata", err);
-				else callback()
-			});
-		}
-
-		t._createSkeletonCompFile(compilation_path, function() {
-			createTasks(function(tasks) {
-				getTotalFrames([...tasks], 0, function(totalFrameCount) {
-					updateMetadata(compilation_path, totalFrameCount, function() {
-						//callScripts(tasks)
-						console.log('will call scripts here')
-					})
-				})
-
-			})
-		})
-	},
-	_createSkeletonCompFile(compilation_path, callback) {
-		fs.writeFile(compilation_path, null, function() {
-			callback()
-		})
-
-	},
-
-	_callNumberFrames(source_file, start_time, duration, totalLength, callback) {
-
-		var numFrames;
-
-		var spawn = require("child_process").spawn;
-		var pythonProcess = spawn('python', ["get_frames.py", source_file, start_time, duration, totalLength]);
-		pythonProcess.stdout.on('data', function(data) {
-
-			numFrames = data;
-		});
-
-		pythonProcess.stderr.on('data', (data) => {
-
-			console.log("error :" + data);
-		});
-
-		pythonProcess.on('exit', (code) => {
-			callback(numFrames)
-		});
-
-	},
 	_callVideoCut(source_file, compilation_video, start_time, duration, callback) {
 		console.log('start ' + source_file)
 		var spawn = require("child_process").spawn;
@@ -555,8 +405,6 @@ module.exports = {
 		});
 
 	},
-
-
 
 	_getEpisodeData(baton, callback) {
 		var t = this;
