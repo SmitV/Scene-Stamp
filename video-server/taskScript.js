@@ -141,9 +141,10 @@ module.exports = {
 
 	},
 
-
 	_callVideoCut(source_file, compilation_video, start_time, duration, indexOfTimestamp) {
 		var t = this
+
+		var pythonMessages = []
 
 		var comp_name = compilation_video.split('.')[0]
 		var options = {
@@ -153,16 +154,17 @@ module.exports = {
 		}
 		ps.PythonShell.run("video_cut.py", options, function(err, data){
 			if(err){
-				console.log('ERROR PYTHON : '+data)
 				t._updateErrorWithinTasks(comp_name, err)
 				return
 			}
+			pythonMessages.push('Python On Start Callback')
 		}).on('message',function(data){
-			console.log('python message : '+data)
+			pythonMessages.push(data)
 		}).end(function(err, data){
-			console.log(err)
-
-			console.log('python CLOSING :'+data)
+			if(err){
+				t._throwError({messages : messages, err:err})
+				return
+			}
 			t._updateTimestampToComplete(comp_name, indexOfTimestamp, function(){
 				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
 			})
