@@ -20,7 +20,11 @@
 		var fontSize = 20;
 		var margin = 30
 		var breakMargin = 20
-		var iconSize = 25;
+
+		var iconSize = {
+			width:30,
+			height:25
+		};
 		var usernameMargin = 30;
 
 		let SCREEN_WIDTH=1000;
@@ -132,14 +136,14 @@
 
 		function setUpTextBoxes(callback){
 			textBoxes.username = createTextBox()
-			textBoxes.username.x = rectangle.x+margin+iconSize+usernameMargin
-			textBoxes.username.y = rectangle.y+margin +iconSize/2
+			textBoxes.username.x = rectangle.x+margin+iconSize.width+usernameMargin
+			textBoxes.username.y = rectangle.y+margin +iconSize.height/2
 			textBoxes.username.maxWidth = TWEET_WIDTH - (margin * 2)
 			textBoxes.username.lineHeight = fontSize
 			
 			textBoxes.text = createTextBox()
 			textBoxes.text.x = rectangle.x+margin
-			textBoxes.text.y = rectangle.y + margin+iconSize+breakMargin 
+			textBoxes.text.y = rectangle.y + margin+iconSize.height+breakMargin 
 			textBoxes.text.maxWidth = TWEET_WIDTH - (margin * 2)
 			textBoxes.text.lineHeight = fontSize
 
@@ -149,8 +153,8 @@
 			drawBoxes.twitterIcon = createImgBox();
 			drawBoxes.twitterIcon.x = rectangle.x+margin + usernameMargin/2
 			drawBoxes.twitterIcon.y = textBoxes.username.y -fontSize
-			drawBoxes.twitterIcon.width = iconSize;
-			drawBoxes.twitterIcon.height = iconSize; 
+			drawBoxes.twitterIcon.width = iconSize.width;
+			drawBoxes.twitterIcon.height = iconSize.height; 
 			drawBoxes.twitterIcon.src = 'https://upload.wikimedia.org/wikipedia/fr/thumb/c/c8/Twitter_Bird.svg/1259px-Twitter_Bird.svg.png';
 				
 			callback()
@@ -172,6 +176,8 @@
 			TWEET_HEIGHT = totalHeight + (margin * 2) + breakMargin;
 			callback()
 		}
+
+
 
 		function getWrapTextHeight(ctx, text, maxWidth, lineHeight){
 			ctx.font = fontSize+"px Arial";
