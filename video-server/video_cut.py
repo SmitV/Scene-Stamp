@@ -22,7 +22,7 @@ def printError(data):
 
 file, compilation, start_time, duration = getArgs(sys.argv)
 compilation = compilation +'.mp4'
-randomFileNumber = str(random.randint(1,100000));
+randomFileNumber = "ip_"+str(random.randint(1,100000));
 
 if path.exists(compilation):
 

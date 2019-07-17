@@ -107,6 +107,33 @@ module.exports = {
 
 	},
 
+	//remove all in progress video files , denoted with suffix 'ip_'
+	removeInProgressVideos(callback){
+		var t = this
+		var errorOccured = false;
+
+		function removeFile(err){
+			if(err){
+				t._generateServerError(err);
+				errorOccured = true;
+			}
+		}
+
+		fs.readdir('./', (err, files) => {
+			if(err){
+				t._generateServerError(err)
+				return
+			}
+			files.filter(function(file){
+				return file.includes('ip_');
+			}).forEach(function(file){
+				fs.unlink('./'+file, callback)
+			})
+		})
+
+		if(!errorOccured) callback()
+	},
+
 	_getAllUnlinkedVideos(baton, callback) {
 		baton.addMethod("_getAllUnlinkedVideos")
 		fs.readdir(UNLINKED_FOLDER, (err, files) => {
@@ -599,6 +626,12 @@ module.exports = {
 			'method_seq': baton.methods
 		};
 		baton.orig_callback(response)
+	},
+
+	_generateServerError(err) {
+		console.log('----------------')
+		console.log(err)
+		console.log()
 	},
 
 	_generateId(length, ids) {
