@@ -186,9 +186,6 @@ module.exports = {
 		var baton = t._getBaton("get_allUnlinkedVideos", null, orig_callback);
 
 		this._getAllUnlinkedVideos(baton, function(unlinked_videos) {
-			unlinked_videos.forEach(function(file) {
-				console.log(file)
-			})
 			baton.callOrigCallback(unlinked_videos.map(function(file) {
 				return {
 					"file_name": file[0]
@@ -331,9 +328,9 @@ module.exports = {
 	
 	},
 
-	get_CompilationVideo(params, res, orig_callback) {
+	get_CompilationVideoStatus(params, orig_callback) {
 		var t = this
-		var baton = t._getBaton("getCompilationVideo", null, orig_callback);
+		var baton = t._getBaton("get_CompilationVideoStatus", null, orig_callback);
 
 		function dataLoader(callback) {
 			t._getAllCompilationVideos(baton, function(comp_videos) {
@@ -367,42 +364,51 @@ module.exports = {
 		dataLoader(function(comp_videos) {
 			validateParams(params, comp_videos, function(comp_name) {
 				taskScript.getStatus(comp_name, function(status) {
-					if (status.completed) {
-						baton.orig_callback = function(file) {
-							res.download(file)
-						}
-						baton.callOrigCallback(COMPILATION_FOLDER + '/' + comp_name + ".mp4")
-					} else {
-						baton.orig_callback(status)
-					}
+					baton.orig_callback(status)
 				})
 			})
 		})
 	},
 
-	_callVideoCut(source_file, compilation_video, start_time, duration, callback) {
-		console.log('start ' + source_file)
-		var spawn = require("child_process").spawn;
-		var pythonProcess = spawn('python', ["video_cut.py", LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]);
-		pythonProcess.stdout.on('data', function(data) {
+	//download video
+	get_CompilationVideo(params, orig_callback){
+		var t = this
+		var baton = t._getBaton("get_CompilationVideo", null, orig_callback);
 
-			console.log("data :" + data);
-		});
+		function dataLoader(callback) {
+			t._getAllCompilationVideos(baton, function(comp_videos) {
+				callback(comp_videos)
+			})
+		}
 
-		pythonProcess.on('data', (data) => {
+		function validateParams(params, compilation_videos, callback) {
+			if (params.compilation_name == undefined) {
+				baton.setError({
+					compilation_name: params.compilation_name,
+					public_message: 'Invalid Params:compilation does not exist'
+				})
+				baton.throwError()
+				return
+			}
+			if (!compilation_videos.map(function(comp) {
+					return comp[0].toLowerCase()
+				}).includes(params.compilation_name.toLowerCase())) {
+				baton.setError({
+					compilation_name: params.compilation_name,
+					public_message: 'Invalid Params:compilation does not exist'
+				})
+				baton.throwError()
+				return
+			} else {
+				callback(COMPILATION_FOLDER + "/"+params.compilation_name+".mp4")
+			}
+		}
 
-			console.log("error :" + data);
-		});
-
-		pythonProcess.stdout.on('exit', (code) => {
-			console.log("Process quit with code : " + code);
-			callback()
-		});
-
-		pythonProcess.on('exit', (code) => {
-			console.log("Process quit with code : " + code);
-			callback()
-		});
+		dataLoader(function(comp_videos) {
+			validateParams(params, comp_videos, function(comp_name) {
+				baton.orig_callback(fs.createWriteStream(comp_name))
+			})
+		})
 
 	},
 

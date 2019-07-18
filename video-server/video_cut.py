@@ -18,11 +18,11 @@ def printError(data):
 	sys.stderr.flush()
 
 #read args 
-printAndFlush('Starting Video Cut for :'+compilation)
 file, compilation, start_time, duration = getArgs(sys.argv)
+printAndFlush('Starting Video Cut for :'+compilation)
 compilation = compilation +'.mp4'
 randomFileNumber = "ip_"+str(random.randint(1,100000));
-printAndFlush('Compilation :'+compilation " | Video #:"+randomFileNumber)
+printAndFlush('Compilation :'+compilation +'| Video #:'+randomFileNumber)
 
 #copy already created compilation video & build on top
 if path.exists(compilation):

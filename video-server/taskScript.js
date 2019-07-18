@@ -41,31 +41,34 @@ module.exports = {
 
 	updateTasks() {
 		var t = this
-		function startTask(tasks, comp_name){
+
+		function startTask(tasks, comp_name) {
 			var timestamps = tasks[comp_name].timestamps
-			if(timestamps.filter(function(ts){return ts.completed != true}).length == 0){
+			if (timestamps.filter(function(ts) {
+					return ts.completed != true
+				}).length == 0) {
 				t._updateRemoveCompFromTask(comp_name)
-				return 
+				return
 			}
-			for(var i = 0; i < timestamps.length; i++){
-				if(!timestamps[i].completed){
+			for (var i = 0; i < timestamps.length; i++) {
+				if (!timestamps[i].completed) {
 					var ts = timestamps[i]
 					currentTasks.push(comp_name)
-					console.log('compilation started : '+ comp_name)
+					console.log('compilation started : ' + comp_name)
 					t._callVideoCut(ts.episode_name, comp_name, ts.start_time, ts.duration, i)
 					break
 				}
 			}
 		}
-		
-		this._readTaskFile(function(tasks){
 
-			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_name){return !currentTasks.includes(comp_name)}).filter(function(task){return tasks[task].error == undefined});
-			console.log('current tasks')
-			console.log(currentTasks)
-			console.log(tasksNotCurrentlyRunning)
-			console.log()
-			tasksNotCurrentlyRunning.forEach(function(comp_name){
+		this._readTaskFile(function(tasks) {
+
+			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_name) {
+				return !currentTasks.includes(comp_name)
+			}).filter(function(task) {
+				return tasks[task].error == undefined
+			});
+			tasksNotCurrentlyRunning.forEach(function(comp_name) {
 				startTask(tasks, comp_name)
 			})
 		})
@@ -87,7 +90,7 @@ module.exports = {
 		})
 	},
 
-	_updateTaskFile(data,callback){
+	_updateTaskFile(data, callback) {
 		var t = this;
 		fs.writeFile(TASK_FILE_PATH, JSON.stringify(data), function(err) {
 			if (err) {
@@ -102,39 +105,39 @@ module.exports = {
 		})
 	},
 
-	_updateRemoveCompFromTask(comp_name){
+	_updateRemoveCompFromTask(comp_name) {
 		console.log('_updateRemoveCompFromTask')
 		var t = this;
-		t._readTaskFile(function(tasks){
+		t._readTaskFile(function(tasks) {
 			delete tasks[comp_name]
-			t._updateTaskFile(tasks, function(){
-				console.log("Completed Compilation Creation : "+comp_name)
+			t._updateTaskFile(tasks, function() {
+				console.log("Completed Compilation Creation : " + comp_name)
 			})
 		})
 	},
 
-	_updateErrorWithinTasks(comp_name, err){
+	_updateErrorWithinTasks(comp_name, err) {
 		console.log('_updateErrorWithinTasks')
 		var t = this;
-		t._readTaskFile(function(tasks){
+		t._readTaskFile(function(tasks) {
 			tasks[comp_name].error = err
-			t._updateTaskFile(tasks, function(){
-				currentTasks.splice(currentTasks.indexOf(comp_name),1)
+			t._updateTaskFile(tasks, function() {
+				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
 				t._throwError({
-					err:err,
-					comp_name:comp_name
+					err: err,
+					comp_name: comp_name
 				})
 			})
 		})
 	},
 
-	_updateTimestampToComplete(comp_name,indexOfTimestamp,callback){
+	_updateTimestampToComplete(comp_name, indexOfTimestamp, callback) {
 		console.log('_updateTimestampToComplete')
 		var t = this;
-		t._readTaskFile(function(tasks){
+		t._readTaskFile(function(tasks) {
 			tasks[comp_name].timestamps[indexOfTimestamp].completed = true
-			t._updateTaskFile(tasks, function(){
-				console.log("Finished adding timestamp # "+indexOfTimestamp + " to compilation video "+comp_name)
+			t._updateTaskFile(tasks, function() {
+				console.log("Finished adding timestamp # " + indexOfTimestamp + " to compilation video " + comp_name)
 				callback()
 			})
 		})
@@ -148,45 +151,61 @@ module.exports = {
 
 		var comp_name = compilation_video.split('.')[0]
 		var options = {
-			mode:'text',
-			pythonPath:'/Users/Kunal/anaconda2/bin/python',
-			args : [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]
+			mode: 'text',
+			pythonPath: '/Users/Kunal/anaconda2/bin/python',
+			args: [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]
 		}
-		ps.PythonShell.run("video_cut.py", options, function(err, data){
-			if(err){
-				t._updateErrorWithinTasks(comp_name, err)
+
+		function handleError(err) {
+			t._updateErrorWithinTasks(comp_name, err)
+			t._throwError({
+				messages: pythonMessages,
+				err: err
+			})
+		}
+		ps.PythonShell.run("video_cut.py", options, function(err, data) {
+			if (err) {
+				handleError(err)
 				return
 			}
 			pythonMessages.push('Python On Start Callback')
-		}).on('message',function(data){
+		}).on('message', function(data) {
 			pythonMessages.push(data)
-		}).end(function(err, data){
-			if(err){
-				t._throwError({messages : messages, err:err})
+		}).end(function(err, data) {
+			if (err) {
+				handleError(err)
 				return
 			}
-			t._updateTimestampToComplete(comp_name, indexOfTimestamp, function(){
+			t._updateTimestampToComplete(comp_name, indexOfTimestamp, function() {
 				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
 			})
 		})
 	},
 
-	getStatus(comp_name, callback){
-		console.log('getStatus')
+	getStatus(comp_name, callback) {
 		var t = this;
 
-		t._readTaskFile(function(tasks){
-			if(tasks[comp_name] == undefined){
-				callback({completed:true})
-			}
-			else{
+		t._readTaskFile(function(tasks) {
+			if (tasks[comp_name] == undefined) {
+				callback({
+					completed: true
+				})
+			} else {
 				var task = tasks[comp_name]
-				if(task.error){
-					callback({completed:false, error: task.error})
+				if (task.error) {
+					callback({
+						completed: false,
+						error: task.error
+					})
 					return
 				}
-				var countCompleted = task.timestamps.filter(function(ts){return ts.completed == true}).length
-				callback({completed:false, percentage: countCompleted / task.timestamps.length})
+				var countCompleted = task.timestamps.filter(function(ts) {
+					return ts.completed == true
+				}).length
+				callback({
+					completed: false,
+					percentage: countCompleted / task.timestamps.length
+				})
 			}
 		})
 	},
