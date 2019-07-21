@@ -5,9 +5,6 @@ import random
 import json
 
 
-def getArgs(argv):
-	# file compilation_path start_time duration
-	return argv[1], argv[2], int(argv[3]), int(argv[4])
 
 def printAndFlush(data):
 	print(data)
@@ -16,6 +13,10 @@ def printAndFlush(data):
 def printError(data):
 	print(data)
 	sys.stderr.flush()
+
+
+def getArgs(argv):	# file compilation_path start_time duration
+	return argv[1], argv[2], int(argv[3]), int(argv[4])
 
 #read args 
 file, compilation, start_time, duration = getArgs(sys.argv)

@@ -7,6 +7,9 @@ var UNLINKED_FOLDER = './unlinked_videos'
 var LINKED_FOLDER = './videos'
 var COMPILATION_FOLDER = './compilations'
 
+//var pythonPath = 'usr/ubuntu/python3'
+var pythonPath = '/Users/kunal/anaconda2/bin/python'
+
 var currentTasks = []
 
 
@@ -123,10 +126,6 @@ module.exports = {
 			tasks[comp_name].error = err
 			t._updateTaskFile(tasks, function() {
 				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
-				t._throwError({
-					err: err,
-					comp_name: comp_name
-				})
 			})
 		})
 	},
@@ -152,12 +151,15 @@ module.exports = {
 		var comp_name = compilation_video.split('.')[0]
 		var options = {
 			mode: 'text',
-			pythonPath: '/Users/Kunal/anaconda2/bin/python',
+			pythonPath: pythonPath,
 			args: [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]
 		}
 
 		function handleError(err) {
-			t._updateErrorWithinTasks(comp_name, err)
+			t._updateErrorWithinTasks(comp_name, {
+				messages: pythonMessages,
+				err: err
+			})
 			t._throwError({
 				messages: pythonMessages,
 				err: err
@@ -168,7 +170,7 @@ module.exports = {
 				handleError(err)
 				return
 			}
-			pythonMessages.push('Python On Start Callback')
+			pythonMessages.push('Video Cut Python On Start Callback')
 		}).on('message', function(data) {
 			pythonMessages.push(data)
 		}).end(function(err, data) {

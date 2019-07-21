@@ -23,18 +23,7 @@ var endpoints = [{
 		//will rename episode to new  
 		url: 'linkToEpisode',
 		action: function(req, res) {
-			console.log(req.body)
-			action.get_linkVideoToEpisode(req.body, function(data) {
-				res.json(data);
-			});
-		}
-	},
-
-	{
-		//will rename episode to new  
-		url: 'createCompilation',
-		action: function(req, res) {
-			action.get_CreateCompilation(req.body, function(data) {
+			action.get_linkVideoToEpisode(req.query, function(data) {
 				res.json(data);
 			});
 		}
@@ -52,31 +41,39 @@ var endpoints = [{
 				res.json(data);
 			});
 		}
-	}, {
+	},{ 
+		url: 'createCompilation',
+		action: function(req, res) {
+			action.get_CreateCompilation(req.body, function(data) {
+				res.json(data);
+			});
+		}
+	},{
+		//gets al list of all of the compilation video names 
 		url: 'getCompilationVideos',
 		action: function(req, res) {
 			action.get_allCompilationVideos(function(data) {
 				res.json(data);
 			});
 		}
-	}, 
-	{
-		url: 'getCompilationVideoStatus',
+	}, {
+		//gets status of a compilation video 
+		url: 'getCompilationStatus',
 		action: function(req, res) {
 			action.get_CompilationVideoStatus(req.query, function(data) {
 				res.json(data);
 			});
 		}
-	},
-	{
-		url: 'getCompilation',
+	}, {
+		//will call res.download to the compilation video file 
+		url: 'downloadCompilation',
 		action: function(req, res) {
-			action.get_CompilationVideo(req.query, function(data) {
-				res.pipe(data);
+			action.get_downloadCompilation(req.query, res, function(data) {
+				//this is to handle error responses, pass in res to function to call download
+				res.json(data);
 			});
 		}
-	},
-
+	}
 
 ]
 

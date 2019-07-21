@@ -1,6 +1,6 @@
 var https = require('https')
 var fs = require('fs')
-var ffmetadata = require("ffmetadata");
+var hostile = require('hostile')
 
 var cred = require('./credentials.js')
 var taskScript = require('./taskScript')
@@ -10,6 +10,8 @@ var TASK_FILE_PATH = './tasks.json'
 var UNLINKED_FOLDER = './unlinked_videos'
 var LINKED_FOLDER = './videos'
 var COMPILATION_FOLDER = './compilations'
+
+var SCP_LOCAL_DIR = '/Users/kunal/Desktop'
 
 
 module.exports = {
@@ -29,8 +31,9 @@ module.exports = {
 		}
 
 		function validate(params, unlinked_vids, linked_videos, episode_data, callback) {
-			//NEED to check if the episode id is valid by calling timestamp server
 			var localFile;
+			console.log(unlinked_vids)
+			console.log(params)
 			if (!unlinked_vids.map(function(file) {
 					return file[0]
 				}).includes(params.unlinked_video)) {
@@ -47,7 +50,7 @@ module.exports = {
 			}
 			if (!episode_data.map(function(ep) {
 					return ep.episode_id
-				}).includes(params.episode_id)) {
+				}).includes(parseInt(params.episode_id))) {
 				baton.setError({
 					episode_id: params.episode_id,
 					public_message: 'Invalid Params Episode Id: invalid id'
@@ -65,6 +68,8 @@ module.exports = {
 				baton.throwError()
 				return
 			}
+
+			//check if the file of the server is mp4
 			if (localFile[1] !== 'mp4') {
 				baton.setError({
 					unlinked_video: localFile.join('.'),
@@ -94,8 +99,7 @@ module.exports = {
 
 		function submit(newFile) {
 			baton.callOrigCallback({
-				file_linked: params.episode_id,
-				file_name: newFile
+				episode_id_linked: params.episode_id
 			})
 		}
 
@@ -186,11 +190,11 @@ module.exports = {
 		var baton = t._getBaton("get_allUnlinkedVideos", null, orig_callback);
 
 		this._getAllUnlinkedVideos(baton, function(unlinked_videos) {
-			baton.callOrigCallback(unlinked_videos.map(function(file) {
-				return {
-					"file_name": file[0]
-				}
-			}))
+			baton.callOrigCallback({
+				videos: unlinked_videos.map(function(file) {
+					return file[0]
+				})
+			})
 		})
 	},
 
@@ -199,11 +203,11 @@ module.exports = {
 		var baton = t._getBaton("get_allLinkedVides", null, orig_callback);
 
 		this._getAlLinkedVideos(baton, function(linked_videos) {
-			baton.callOrigCallback(linked_videos.map(function(file) {
-				return {
-					"file_name": file[0]
-				}
-			}))
+			baton.callOrigCallback({
+				videos: linked_videos.map(function(file) {
+					return file[0]
+				})
+			})
 		})
 	},
 
@@ -212,11 +216,11 @@ module.exports = {
 		var baton = t._getBaton("get_allCompilationVideos", null, orig_callback);
 
 		this._getAllCompilationVideos(baton, function(comp_videos) {
-			baton.callOrigCallback(comp_videos.map(function(file) {
-				return {
-					"file_name": file[0]
-				}
-			}))
+			baton.callOrigCallback({
+				videos: comp_videos.map(function(file) {
+					return file[0]
+				})
+			})
 		})
 	},
 
@@ -237,8 +241,8 @@ module.exports = {
 
 			var errorOccur = false;
 			if (compilation_videos.map(function(comp) {
-					return comp[0].toLowerCase()
-				}).includes(params.compilation_name.toLowerCase())) {
+					return comp[0]
+				}).includes(params.compilation_name)) {
 				baton.setError({
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params:compilation with same name exists"
@@ -304,6 +308,7 @@ module.exports = {
 
 	_updateTaskFile(baton, comp_name, timestamps, callback) {
 		var t = this;
+
 		function updateTaskFile(currentTasks, callback) {
 			currentTasks[comp_name] = {
 				timestamps: timestamps
@@ -322,58 +327,45 @@ module.exports = {
 			})
 		}
 
-			t._readTaskFile(baton, function(data) {
-				updateTaskFile(data, callback)
-			})
-	
+		t._readTaskFile(baton, function(data) {
+			updateTaskFile(data, callback)
+		})
+
 	},
 
 	get_CompilationVideoStatus(params, orig_callback) {
 		var t = this
 		var baton = t._getBaton("get_CompilationVideoStatus", null, orig_callback);
 
-		function dataLoader(callback) {
-			t._getAllCompilationVideos(baton, function(comp_videos) {
-				callback(comp_videos)
-			})
-		}
-
-		function validateParams(params, compilation_videos, callback) {
-			if (params.compilation_name == undefined) {
-				baton.setError({
-					episode_id: params.episode_id,
-					public_message: 'Invalid Params:compilation does not exist'
-				})
-				baton.throwError()
-				return
-			}
-			if (!compilation_videos.map(function(comp) {
-					return comp[0].toLowerCase()
-				}).includes(params.compilation_name.toLowerCase())) {
-				baton.setError({
-					episode_id: params.episode_id,
-					public_message: 'Invalid Params:compilation does not exist'
-				})
-				baton.throwError()
-				return
-			} else {
-				callback(params.compilation_name)
-			}
-		}
-
-		dataLoader(function(comp_videos) {
-			validateParams(params, comp_videos, function(comp_name) {
-				taskScript.getStatus(comp_name, function(status) {
+		taskScript.getStatus(params.compilation_name, function(status) {
+			if (status.completed) {
+				t._assertCompilationNameExists(baton, params.compilation_name, function() {
 					baton.orig_callback(status)
 				})
-			})
+				return
+			}
+			baton.orig_callback(status)
 		})
+
 	},
 
 	//download video
-	get_CompilationVideo(params, orig_callback){
+	get_downloadCompilation(params, res, orig_callback) {
 		var t = this
 		var baton = t._getBaton("get_CompilationVideo", null, orig_callback);
+
+		t._assertCompilationNameExists(baton, params.compilation_name, function(comp_path) {
+			baton.orig_callback = function(data) {
+				res.download(data);
+			}
+			baton.callOrigCallback(comp_path)
+		})
+
+	},
+
+	_assertCompilationNameExists(baton, comp_name, callback) {
+		var t = this
+		baton.addMethod('_assertCompilationNameExists')
 
 		function dataLoader(callback) {
 			t._getAllCompilationVideos(baton, function(comp_videos) {
@@ -381,35 +373,32 @@ module.exports = {
 			})
 		}
 
-		function validateParams(params, compilation_videos, callback) {
-			if (params.compilation_name == undefined) {
+		function validate(comp_name, comp_videos, callback) {
+			if (comp_name == undefined) {
 				baton.setError({
-					compilation_name: params.compilation_name,
-					public_message: 'Invalid Params:compilation does not exist'
+					compilation_name: comp_name,
+					public_message: 'Invalid compilation name: compilation does not exist'
+				})
+				baton.throwError()
+				return
+			} else if (!comp_videos.map(function(comp) {
+					return comp[0]
+				}).includes(comp_name)) {
+				baton.setError({
+					compilation_name: comp_name,
+					public_message: 'Invalid compilation name: compilation does not exist'
 				})
 				baton.throwError()
 				return
 			}
-			if (!compilation_videos.map(function(comp) {
-					return comp[0].toLowerCase()
-				}).includes(params.compilation_name.toLowerCase())) {
-				baton.setError({
-					compilation_name: params.compilation_name,
-					public_message: 'Invalid Params:compilation does not exist'
-				})
-				baton.throwError()
-				return
-			} else {
-				callback(COMPILATION_FOLDER + "/"+params.compilation_name+".mp4")
-			}
+			callback(COMPILATION_FOLDER + "/" + comp_name + ".mp4")
 		}
 
 		dataLoader(function(comp_videos) {
-			validateParams(params, comp_videos, function(comp_name) {
-				baton.orig_callback(fs.createWriteStream(comp_name))
+			validate(comp_name, comp_videos, function(full_compilation_path) {
+				callback(full_compilation_path)
 			})
 		})
-
 	},
 
 	_getEpisodeData(baton, callback) {
@@ -427,7 +416,6 @@ module.exports = {
 			});
 		});
 	},
-
 
 	/**
 	 * Creates the 'baton' object holding all general info for the session functions
@@ -474,10 +462,9 @@ module.exports = {
 		console.log()
 		var response = {
 			'id': baton.id,
-			'error_message': baton.err.map(function(err) {
-				return err.public_message
-			}).join('.'),
-			'method_seq': baton.methods
+			'error_message': baton.err.map(function(error) {
+				return (error.public_message != undefined ? error.public_message : 'An internal error has occured')
+			}).join('.')
 		};
 		baton.orig_callback(response)
 	},
