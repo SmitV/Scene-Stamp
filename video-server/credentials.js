@@ -1,0 +1,1 @@
+var TIMESTAMP_SERVER_URL = 'scene-stamp-server.herokuapp.com'
