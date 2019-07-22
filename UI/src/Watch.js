@@ -101,9 +101,16 @@ export default class Watch extends React.Component {
         categories += this.state.selected_category[cat];
       }
     }
+    let clear = "";
+    if(categories == "") {
+      clear += "&clearCategories=true";
+    }
+    if(characters == "") {
+      clear += "&clearCharacters=true";
+    }
     fetch(
       "https://scene-stamp-server.herokuapp.com/updateTimestamp?timestamp_id=" +
-        id + "&character_ids=" + characters + "&category_ids=" + categories
+        id + "&character_ids=" + characters + "&category_ids=" + categories + clear
     )
     .then(resp => resp.json())
     .then(data => this.replaceEntry(data));
@@ -286,12 +293,16 @@ export default class Watch extends React.Component {
   addCharacter(char) {
     let data = this.state.characters;
     data.push(char);
-    this.setState({characters: data});
+    let cMap = this.state.charMap;
+    cMap[char.character_name] = char.character_id;
+    this.setState({characters: data, charMap: cMap});
   }
   addCategory(category) {
     let data = this.state.categories;
     data.push(category);
-    this.setState({categories: data});
+    let cMap = this.state.catMap;
+    cMap[category.category_name] = category.category_id;
+    this.setState({categories: data, catMap: cMap});
   }
   handleSubmitCategory() {
     fetch(
