@@ -1,6 +1,5 @@
 import React from "react";
 import Scene from "./Scene";
-import Strip from "./Strip";
 import { Player } from "video-react";
 import "./App.css";
 
@@ -9,14 +8,14 @@ export default class Home extends React.Component {
     super(props);
   }
   render() {
-    var categories = ["Funny", "Dramatic", "Inspirational", "Cool"];
-    var characters = ["Jon", "Tyrion", "Dany", "Sansa", "Arya"];
     var path = require("./videos/36693.mp4");
     return (
       <div className="content-container">
         <h2>Select Scenes</h2>
         <div>
-          <input type="text" placeholder="Search Video..." />
+          <input type="text" placeholder="Search Series..." />
+          <input type="text" placeholder="Search Characters..." />
+          <input type="text" placeholder="Search Categories..." />
         </div>
         <div className="scenes-container">
           <h3>Pick Scenes</h3>
@@ -32,10 +31,6 @@ export default class Home extends React.Component {
         </div>
         <div className="video-styles">
           <Player playsInline src={path} startTime={90} />
-        </div>
-        <div>
-          <Strip title="Categories" elements={categories} />
-          <Strip title="Characters" elements={characters} />
         </div>
       </div>
     );
