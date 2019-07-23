@@ -7,12 +7,12 @@ var taskScript = require('./taskScript')
 
 var TASK_FILE_PATH = './tasks.json'
 
-var UNLINKED_FOLDER = './unlinked_videos'
-var LINKED_FOLDER = './videos'
-var COMPILATION_FOLDER = './compilations'
+var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
+//var ROOT_DIR = '/home/ubuntu/'
 
-var SCP_LOCAL_DIR = '/Users/kunal/Desktop'
-
+var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
+var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
+var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
 
 module.exports = {
 
