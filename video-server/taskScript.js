@@ -3,11 +3,14 @@ var ps = require('python-shell')
 
 var TASK_FILE_PATH = './tasks.json'
 
-var UNLINKED_FOLDER = './unlinked_videos'
-var LINKED_FOLDER = './videos'
-var COMPILATION_FOLDER = './compilations'
+var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
+//var ROOT_DIR = '/home/ubuntu/'
 
-//var pythonPath = 'usr/ubuntu/python3'
+var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
+var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
+var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
+
+//var pythonPath = '/usr/ubuntu/python3'
 var pythonPath = '/Users/kunal/anaconda2/bin/python'
 
 var currentTasks = []

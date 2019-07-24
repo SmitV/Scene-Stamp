@@ -1,6 +1,5 @@
 var https = require('https')
 var fs = require('fs')
-var hostile = require('hostile')
 
 var cred = require('./credentials.js')
 var taskScript = require('./taskScript')
@@ -238,6 +237,14 @@ module.exports = {
 		}
 
 		function validateCreateCompilationParams(linked_videos, compilation_videos, callback) {
+
+			if(!Array.isArray(params.timestamps) ||params.timestamps.length < 0 ){
+				baton.setError({
+					compilation_name: params.compilation_name,
+					public_message: "Invalid Params: timestamps"
+				})
+				baton.throwError()
+			}
 
 			var errorOccur = false;
 			if (compilation_videos.map(function(comp) {
