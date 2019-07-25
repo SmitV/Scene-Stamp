@@ -53,6 +53,9 @@ export default class Watch extends React.Component {
       time: 0,
       charMap: {},
       catMap: {},
+      episodeScreen: true,
+      radioSelected: "",
+      unlinkedVids: [],
     };
   }
   componentDidMount() {
@@ -263,6 +266,11 @@ export default class Watch extends React.Component {
       }
     }
   }
+  handleSubmitLink(e) {
+    fetch("http://ec2-18-224-0-88.us-east-2.compute.amazonaws.com:8081/linkToEpisode?unlinked_video="
+     + this.state.radioSelected + "&episode_id=" + this.state.newlyCreatedEpisode)
+      .then(resp => resp.json())
+  }
   handleSubmitSeries() {
     let seriesData = this.state.seriesOptions;
     fetch(
@@ -304,6 +312,12 @@ export default class Watch extends React.Component {
     cMap[category.category_name] = category.category_id;
     this.setState({categories: data, catMap: cMap});
   }
+  nextEpisodePage(entry, epData) {
+    epData.push(entry);
+    fetch("http://ec2-18-224-0-88.us-east-2.compute.amazonaws.com:8081/getUnlinkedVideos")
+      .then(resp => resp.json())
+      .then(data => this.setState({episodeData: epData, episodeScreen: false, unlinkedVids: data.videos, newlyCreatedEpisode: entry.episode_id}));
+  }
   handleSubmitCategory() {
     fetch(
       "https://scene-stamp-server.herokuapp.com/newCategory?category_name=" +
@@ -334,15 +348,16 @@ export default class Watch extends React.Component {
         currQuery
     )
       .then(res => res.json())
-      .then(data => episodeData.push(data))
+      // .then(data => episodeData.push(data))
+      .then(data => this.nextEpisodePage(data, episodeData))
       .then(data =>
         this.setState({
           episodeOptions: episodeData,
-          modalOpen: false,
           episode_num: "",
           season_num: "",
           episode_name: "",
-          air_date: ""
+          air_date: "",
+          episodeScreen: false,
         })
       )
       .catch(err => console.log(err));
@@ -352,6 +367,11 @@ export default class Watch extends React.Component {
   }
   handleNewCategory(e) {
     this.setState({categoryModal: true});
+  }
+  handleRadio(event) {
+    this.setState({
+      radioSelected: event.target.value
+    });
   }
   displayModal(type) {
     if (type == "Create New Series") {
@@ -495,6 +515,7 @@ export default class Watch extends React.Component {
                   <span className="close" onClick={this.handleClose}>
                     &times;
                   </span>
+                  { this.state.episodeScreen ? 
                   <div className="watch-modal-episodes">
                     <input
                       onChange={this.handleChange}
@@ -521,10 +542,37 @@ export default class Watch extends React.Component {
                         className="watch-series-submit"
                         onClick={this.handleSubmitEpisode}
                       >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                  : 
+                  <div className="watch-modal-episodes">
+                    <ul>
+                      {this.state.unlinkedVids.map(element => (
+                        <li>
+                        <label>
+                          <input
+                            type="radio"
+                            value={element}
+                            checked={this.state.radioSelected === "small"}
+                            onChange={this.handleRadio}
+                          />
+                          {element}
+                        </label>
+                      </li>
+                      ))} 
+                    </ul>
+                    <div className="watch-modal-margin">
+                      <button
+                        className="watch-series-submit"
+                        onClick={(e) => this.handleSubmitLink(e)}
+                      >
                         Submit
                       </button>
                     </div>
                   </div>
+                  }
                 </div>
               )}
             </div>

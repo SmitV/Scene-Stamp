@@ -1,5 +1,5 @@
 .content-container {
-  padding: 0 5rem;
+  padding: 1rem 5rem;
 }
 
 .content-container input {
@@ -12,20 +12,23 @@
 }
 
 .scenes-container {
+  margin-top: 1.5rem;
   float: right;
 }
 
 .scenes-potential {
   width: 300px;
   height: 500px;
+  overflow: auto;
   border: 2px solid black;
   margin-bottom: 50px;
 }
 
 .scenes-picked {
   width: 300px;
-  height: 200px;
+  min-height: 200px;
   max-height: 400px;
+  overflow: auto;
   border: 2px solid black;
 }
 
@@ -34,6 +37,7 @@
   font-size: 18px;
   height: 50px;
   line-height: 50px;
+  margin-bottom: 0.5rem;
 }
 
 .picked-header div {
@@ -41,7 +45,7 @@
 }
 
 .picked-header button {
-  margin-left: 20px;
+  margin-left: 5px;
   background: #d01212;
   color: white;
   height: 30px;
@@ -61,4 +65,94 @@
   width: 60%;
   height: 40%;
   float: left;
+}
+
+.scenes-dropdown {
+  width: 25%;
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.scenes-btn {
+  height: 30px;
+  border-radius: 5px;
+  background-color: #2185d0;
+  color: white;
+  border:none;
+}
+
+.scenes-btn:hover {
+  cursor: pointer;
+}
+
+.scene-container {
+  border-bottom: 1px solid black;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.scene-container > div:first-child {
+  font-weight: bold;
+  color: rgb(91, 122, 185);
+}
+
+.scene-container > div:last-child {
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+.scene-container > div:last-child > div:first-child {
+  float: left;
+}
+
+.scene-container > div:last-child > div:last-child {
+  margin-left: 235px;
+}
+
+.icons {
+  margin-right: 10px;
+}
+
+.scene-start-time {
+  font-weight: bold;
+}
+
+.icon-check {
+  color: rgb(79, 172, 58);
+}
+
+.icon-play:hover {
+  color: red;
+  cursor: pointer;
+}
+
+.icon-check:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.icon-close {
+  color: rgb(167, 50, 48);
+}
+
+.icon-close:hover {
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.active-clip {
+  border: 3px solid #2185d0;
+}
+
+.scene-start-time span {
+  display:inline-block;
+  margin-right: 4px;
+}
+
+.picked-header input {
+  width: 60%;
+}
+
+.watch-modal-episodes li {
+  list-style: none;
 }
