@@ -47,7 +47,8 @@ var endpoints = [{
 			action.get_CreateCompilation(req.body, function(data) {
 				res.json(data);
 			});
-		}
+		},
+		post:true
 	},{
 		//gets al list of all of the compilation video names 
 		url: 'getCompilationVideos',
@@ -79,9 +80,16 @@ var endpoints = [{
 
 
 endpoints.forEach(function(endpoint) {
+	if(endpoint.post){
+		app.post('/' + endpoint.url, function(req, res) {
+			endpoint.action(req, res);
+		});
+		return
+	}
 	app.get('/' + endpoint.url, function(req, res) {
 		endpoint.action(req, res);
 	});
+	
 })
 
 
