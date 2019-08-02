@@ -6,12 +6,12 @@ var taskScript = require('./taskScript')
 
 var TASK_FILE_PATH = './tasks.json'
 
-var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
-//var ROOT_DIR = '/home/ubuntu/'
-
-var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
-var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
-var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
+const {
+	ROOT_DIR,
+	UNLINKED_FOLDER,
+	LINKED_FOLDER,
+	COMPILATION_FOLDER
+} = taskScript.getAllDirectories();
 
 module.exports = {
 
@@ -151,7 +151,7 @@ module.exports = {
 		this._getFilesFromDir(baton, COMPILATION_FOLDER, callback)
 	},
 
-	_getFilesFromDir(baton, dir, callback){
+	_getFilesFromDir(baton, dir, callback) {
 		fs.readdir(dir, (err, files) => {
 			if (err) {
 				baton.setError({
@@ -161,7 +161,7 @@ module.exports = {
 				baton.throwError()
 				return
 			}
-			if(!files || files == undefined) callback([])
+			if (!files || files == undefined) callback([])
 			callback(files.map(function(file) {
 				return [file.split('.')[0], file.split('.')[1]]
 			}))
@@ -222,7 +222,7 @@ module.exports = {
 
 		function validateCreateCompilationParams(linked_videos, compilation_videos, callback) {
 
-			if(!Array.isArray(params.timestamps) ||params.timestamps.length < 0 ){
+			if (!Array.isArray(params.timestamps) || params.timestamps.length < 0) {
 				baton.setError({
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params: timestamps"

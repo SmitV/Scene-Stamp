@@ -51,6 +51,10 @@ module.exports = {
 	PYTHON_PATH: PYTHON_PATH,
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
+	
+	getAllDirectories(){
+		return {ROOT_DIR, UNLINKED_FOLDER, LINKED_FOLDER, COMPILATION_FOLDER}
+	},
 
 	updateTasks() {
 		var t = this
