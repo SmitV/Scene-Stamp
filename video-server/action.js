@@ -139,16 +139,16 @@ module.exports = {
 
 	_getAllUnlinkedVideos(baton, callback) {
 		baton.addMethod("_getAllUnlinkedVideos")
-		_getFilesFromDir(baton, UNLINKED_FOLDER, callback)
+		this._getFilesFromDir(baton, UNLINKED_FOLDER, callback)
 	},
 
 	_getAlLinkedVideos(baton, callback) {
 		baton.addMethod("_getAlLinkedVideos")
-		_getFilesFromDir(baton, LINKED_FOLDER, callback)
+		this._getFilesFromDir(baton, LINKED_FOLDER, callback)
 	},
 	_getAllCompilationVideos(baton, callback) {
 		baton.addMethod("_getAllCompilationVideos")
-		_getFilesFromDir(baton, COMPILATION_FOLDER, callback)
+		this._getFilesFromDir(baton, COMPILATION_FOLDER, callback)
 	},
 
 	_getFilesFromDir(baton, dir, callback){
