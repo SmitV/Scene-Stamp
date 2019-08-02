@@ -11,7 +11,7 @@ var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
 var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
 var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
 
-//var PYTHON_PATH = '/usr/ubuntu/python3'
+//var PYTHON_PATH = '/usr/bin/python'
 var PYTHON_PATH = '/Users/kunal/anaconda2/bin/python'
 
 var VIDEO_CUT_FILE = 'video_cut.py'
