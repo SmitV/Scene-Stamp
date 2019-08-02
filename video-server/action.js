@@ -159,6 +159,7 @@ module.exports = {
 					public_message: "An Internal Error has occured"
 				})
 				baton.throwError()
+				return
 			}
 			if(!files || files == undefined) callback([])
 			callback(files.map(function(file) {
