@@ -1,5 +1,6 @@
 var fs = require('fs')
 var ps = require('python-shell')
+var async = require('async')
 
 var TASK_FILE_PATH = './tasks.json'
 
@@ -10,8 +11,11 @@ var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
 var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
 var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
 
-//var pythonPath = '/usr/ubuntu/python3'
-var pythonPath = '/Users/kunal/anaconda2/bin/python'
+//var PYTHON_PATH = '/usr/ubuntu/python3'
+var PYTHON_PATH = '/Users/kunal/anaconda2/bin/python'
+
+var VIDEO_CUT_FILE = 'video_cut.py'
+var TEST_PYTHON_FILE = 'testPython.py'
 
 var currentTasks = []
 
@@ -44,6 +48,9 @@ General Flow:
 
 module.exports = {
 
+	PYTHON_PATH: PYTHON_PATH,
+	ROOT_DIR: ROOT_DIR,
+	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
 
 	updateTasks() {
 		var t = this
@@ -154,7 +161,7 @@ module.exports = {
 		var comp_name = compilation_video.split('.')[0]
 		var options = {
 			mode: 'text',
-			pythonPath: pythonPath,
+			pythonPath: PYTHON_PATH,
 			args: [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]
 		}
 
@@ -168,7 +175,7 @@ module.exports = {
 				err: err
 			})
 		}
-		ps.PythonShell.run("video_cut.py", options, function(err, data) {
+		ps.PythonShell.run(VIDEO_CUT_FILE, options, function(err, data) {
 			if (err) {
 				handleError(err)
 				return
@@ -219,6 +226,92 @@ module.exports = {
 	_throwError(data) {
 		console.log('----AUTOMATED------')
 		console.log(data)
-		console.log()
+		console.log('\n')
+	},
+
+	initialTests(callback) {
+
+		this.callTestPythonScript(error => {
+			if (!error) {
+				this.checkDirectories(error => {
+					callback(error)
+				})
+				return
+			}
+			callback(error)
+		})
+
+	},
+
+	checkDirectories(suc_callback) {
+
+		var tasks = []
+
+		function checkDirExists(dir, callback) {
+			fs.access(dir, error => {
+				callback(error)
+			})
+		}
+
+		tasks.push(function(callback) {
+			checkDirExists(UNLINKED_FOLDER, callback);
+		})
+		tasks.push(function(callback) {
+			checkDirExists(LINKED_FOLDER, callback);
+		})
+		tasks.push(function(callback) {
+			checkDirExists(COMPILATION_FOLDER, callback);
+		})
+
+		async.parallel(tasks,
+			err => {
+				if (err) {
+					this._throwError(err)
+					suc_callback(err)
+					return
+				}
+				suc_callback()
+			})
+	},
+
+	/**
+	 * Call to test python can run on server
+	 * Will run before loops run on the server 
+	 */
+
+	callTestPythonScript(callback) {
+		var t = this
+
+		var pythonMessages = []
+		var options = {
+			mode: 'text',
+			pythonPath: PYTHON_PATH,
+		}
+
+		function handleError(err) {
+			t._throwError({
+				messages: pythonMessages,
+				err: err
+			})
+			callback(err)
+		}
+		ps.PythonShell.run(TEST_PYTHON_FILE, options, function(err, data) {
+			if (err) {
+				handleError(err)
+				return
+			}
+			pythonMessages.push('Video Cut Python On Start Callback')
+		}).on('error', err => {
+			console.log('error has caught')
+			handleError(err)
+		}).on('message', function(data) {
+			pythonMessages.push(data)
+		}).end(function(err, data) {
+			if (err) {
+				handleError(err)
+				return
+			}
+			callback()
+		})
 	},
 }

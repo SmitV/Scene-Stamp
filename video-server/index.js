@@ -41,15 +41,15 @@ var endpoints = [{
 				res.json(data);
 			});
 		}
-	},{ 
+	}, {
 		url: 'createCompilation',
 		action: function(req, res) {
 			action.get_CreateCompilation(req.body, function(data) {
 				res.json(data);
 			});
 		},
-		post:true
-	},{
+		post: true
+	}, {
 		//gets al list of all of the compilation video names 
 		url: 'getCompilationVideos',
 		action: function(req, res) {
@@ -80,7 +80,7 @@ var endpoints = [{
 
 
 endpoints.forEach(function(endpoint) {
-	if(endpoint.post){
+	if (endpoint.post) {
 		app.post('/' + endpoint.url, function(req, res) {
 			endpoint.action(req, res);
 		});
@@ -89,18 +89,29 @@ endpoints.forEach(function(endpoint) {
 	app.get('/' + endpoint.url, function(req, res) {
 		endpoint.action(req, res);
 	});
-	
+
 })
 
 
 var server = app.listen(process.env.PORT || 8081, function() {
 	console.log("Scene Stamp Video Server Running @ port ", this.address().port)
-	var loop;
-	action.removeInProgressVideos(function() {
-		loop = setInterval(function() {
-			taskScript.updateTasks()
-		}, 2000);
+
+	function taskLoop() {
+		var loop;
+		action.removeInProgressVideos(function() {
+			loop = setInterval(function() {
+				taskScript.updateTasks()
+			}, 2000);
+		})
+
+	}
+	
+	taskScript.initialTests(err => {
+		if (err) {
+			console.log('Did not start server')
+			server.close()
+			return 
+		}
+		taskLoop();
 	})
-
-
 })
