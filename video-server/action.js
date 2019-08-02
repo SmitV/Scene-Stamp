@@ -438,7 +438,7 @@ module.exports = {
 			setError: function(error) {
 				var end_time = new Date()
 				this.duration = end_time.getTime() - this.start_time
-				this.err.push(error);
+				this.err.push(error.toString());
 			},
 			throwError: function() {
 				t._generateError(this)
