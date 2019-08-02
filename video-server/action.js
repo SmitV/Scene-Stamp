@@ -139,38 +139,20 @@ module.exports = {
 
 	_getAllUnlinkedVideos(baton, callback) {
 		baton.addMethod("_getAllUnlinkedVideos")
-		fs.readdir(UNLINKED_FOLDER, (err, files) => {
-			if (err) {
-				baton.setError({
-					error: err,
-					public_message: "An Internal Error has occured"
-				})
-				baton.throwError()
-			}
-			callback(files.map(function(file) {
-				return [file.split('.')[0], file.split('.')[1]]
-			}))
-		})
+		_getFilesFromDir(baton, UNLINKED_FOLDER, callback)
 	},
 
 	_getAlLinkedVideos(baton, callback) {
 		baton.addMethod("_getAlLinkedVideos")
-		fs.readdir(LINKED_FOLDER, (err, files) => {
-			if (err) {
-				baton.setError({
-					error: err,
-					public_message: "An Internal Error has occured"
-				})
-				baton.throwError()
-			}
-			callback(files.map(function(file) {
-				return [file.split('.')[0], file.split('.')[1]]
-			}))
-		})
+		_getFilesFromDir(baton, LINKED_FOLDER, callback)
 	},
 	_getAllCompilationVideos(baton, callback) {
 		baton.addMethod("_getAllCompilationVideos")
-		fs.readdir(COMPILATION_FOLDER, (err, files) => {
+		_getFilesFromDir(baton, COMPILATION_FOLDER, callback)
+	},
+
+	_getFilesFromDir(baton, dir, callback){
+		fs.readdir(dir, (err, files) => {
 			if (err) {
 				baton.setError({
 					error: err,
@@ -178,6 +160,7 @@ module.exports = {
 				})
 				baton.throwError()
 			}
+			if(!files || files == undefined) callback([])
 			callback(files.map(function(file) {
 				return [file.split('.')[0], file.split('.')[1]]
 			}))
