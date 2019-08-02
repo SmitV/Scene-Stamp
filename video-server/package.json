@@ -4,7 +4,10 @@
   "description": "stores videos for scene stamp ; api's to store episode files and create compilation videos",
   "main": "index.js",
   "dependencies": {
+    "assert": "^2.0.0",
+    "async": "^3.1.0",
     "body-parser": "^1.19.0",
+    "chai": "^4.2.0",
     "child_process": "^1.0.2",
     "express": "^4.17.1",
     "ffmetadata": "^1.5.0",
@@ -12,11 +15,13 @@
     "forever": "^1.0.0",
     "fs": "0.0.1-security",
     "https": "^1.0.0",
+    "mocha": "^6.2.0",
     "python-shell": "^1.0.7"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm test",
+    "test": "mocha"
   },
   "author": "",
   "license": "ISC"
