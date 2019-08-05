@@ -302,24 +302,19 @@ module.exports = {
 
 		function createSubTimestamps(ts, callback) {
 			var subTimestamps = []
-			do {
+			while (ts.duration > SUB_TIMESTAMP_DURATION) {
 				subTimestamps.push({
 					episode_id: ts.episode_id,
 					start_time: ts.start_time,
-					duration: Math.min(ts.duration, SUB_TIMESTAMP_DURATION),
+					duration: SUB_TIMESTAMP_DURATION,
 					episode_name: ts.episode_name
 				})
 				if (ts.duration > SUB_TIMESTAMP_DURATION) {
 					ts.start_time += SUB_TIMESTAMP_DURATION
 					ts.duration -= SUB_TIMESTAMP_DURATION
 				}
-			} while (ts.duration > SUB_TIMESTAMP_DURATION);
-			subTimestamps.push({
-					episode_id: ts.episode_id,
-					start_time: ts.start_time,
-					duration: Math.min(ts.duration, SUB_TIMESTAMP_DURATION),
-					episode_name: ts.episode_name
-				})
+			} ;
+			subTimestamps.push(ts)
 			callback(subTimestamps)
 		}
 
