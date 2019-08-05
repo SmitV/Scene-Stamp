@@ -6,6 +6,8 @@ var taskScript = require('./taskScript')
 
 var TASK_FILE_PATH = './tasks.json'
 
+var SUB_TIMESTAMP_DURATION = 10
+
 const {
 	ROOT_DIR,
 	UNLINKED_FOLDER,
@@ -31,8 +33,6 @@ module.exports = {
 
 		function validate(params, unlinked_vids, linked_videos, episode_data, callback) {
 			var localFile;
-			console.log(unlinked_vids)
-			console.log(params)
 			if (!unlinked_vids.map(function(file) {
 					return file[0]
 				}).includes(params.unlinked_video)) {
@@ -300,7 +300,40 @@ module.exports = {
 	_updateTaskFile(baton, comp_name, timestamps, callback) {
 		var t = this;
 
-		function updateTaskFile(currentTasks, callback) {
+		function createSubTimestamps(ts, callback) {
+			var subTimestamps = []
+			do {
+				subTimestamps.push({
+					episode_id: ts.episode_id,
+					start_time: ts.start_time,
+					duration: Math.min(ts.duration, SUB_TIMESTAMP_DURATION),
+					episode_name: ts.episode_name
+				})
+				if (ts.duration > SUB_TIMESTAMP_DURATION) {
+					ts.start_time += SUB_TIMESTAMP_DURATION
+					ts.duration -= SUB_TIMESTAMP_DURATION
+				}
+			} while (ts.duration > SUB_TIMESTAMP_DURATION);
+			subTimestamps.push({
+					episode_id: ts.episode_id,
+					start_time: ts.start_time,
+					duration: Math.min(ts.duration, SUB_TIMESTAMP_DURATION),
+					episode_name: ts.episode_name
+				})
+			callback(subTimestamps)
+		}
+
+		function breakUpTimestamps(timestamps, callback) {
+			var newTimestamps = []
+			let breakUp = timestamps.forEach(function(ts) {
+				createSubTimestamps(ts, function(subTimestamps){
+					newTimestamps = newTimestamps.concat(subTimestamps)
+					if(timestamps.indexOf(ts) == timestamps.length - 1) callback(newTimestamps)
+				})
+			})
+		}
+
+		function updateTaskFile(currentTasks, timestamps, callback) {
 			currentTasks[comp_name] = {
 				timestamps: timestamps
 			}
@@ -317,9 +350,10 @@ module.exports = {
 				} else callback()
 			})
 		}
-
-		t._readTaskFile(baton, function(data) {
-			updateTaskFile(data, callback)
+		breakUpTimestamps(timestamps, function(newTimestamps) {
+			t._readTaskFile(baton, function(data) {
+				updateTaskFile(data, newTimestamps, callback)
+			})
 		})
 
 	},
@@ -451,7 +485,7 @@ module.exports = {
 		var response = {
 			'id': baton.id,
 			'error_message': baton.err.map(function(error) {
-				return (JSON.parse( error).public_message ? JSON.parse( error).public_message : 'An internal error has occured')
+				return (JSON.parse(error).public_message ? JSON.parse(error).public_message : 'An internal error has occured')
 			}).join('.')
 		};
 		baton.orig_callback(response)
