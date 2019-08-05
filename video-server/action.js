@@ -438,7 +438,7 @@ module.exports = {
 			setError: function(error) {
 				var end_time = new Date()
 				this.duration = end_time.getTime() - this.start_time
-				this.err.push(error.toString());
+				this.err.push(JSON.stringify( error));
 			},
 			throwError: function() {
 				t._generateError(this)
@@ -448,16 +448,21 @@ module.exports = {
 
 
 	_generateError(baton) {
-		console.log('----------------')
-		console.log(baton)
-		console.log()
 		var response = {
 			'id': baton.id,
 			'error_message': baton.err.map(function(error) {
-				return (error.public_message != undefined ? error.public_message : 'An internal error has occured')
+				return (JSON.parse( error).public_message ? JSON.parse( error).public_message : 'An internal error has occured')
 			}).join('.')
 		};
 		baton.orig_callback(response)
+		delete baton.orig_callback
+		delete baton.addMethod
+		delete baton.setError
+		delete baton.throwError
+		delete baton.callOrigCallback
+		console.log('----------------')
+		console.log(baton)
+		console.log()
 	},
 
 	_generateServerError(err) {
