@@ -1,7 +1,7 @@
   {
-    "name": "Getting Started Example",
+    "name": "SceneStamp",
     "version": "1.0",
-    "description": "Build an Extension!",
+    "description": "Scene Stamp chrome extension to mark timestamps",
     "permissions": ["declarativeContent","storage"],
     "background": {
       "scripts": ["background.js"],
