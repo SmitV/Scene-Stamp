@@ -23,7 +23,7 @@ module.exports = {
 
 		function dataLoader(callback) {
 			t._getAllUnlinkedVideos(baton, function(unlinked_videos) {
-				t._getAlLinkedVideos(baton, function(linked_videos) {
+				t._getAllLinkedVideos(baton, function(linked_videos) {
 					t._getEpisodeData(baton, function(episode_data) {
 						callback(unlinked_videos, linked_videos, episode_data)
 					});
@@ -142,8 +142,8 @@ module.exports = {
 		this._getFilesFromDir(baton, UNLINKED_FOLDER, callback)
 	},
 
-	_getAlLinkedVideos(baton, callback) {
-		baton.addMethod("_getAlLinkedVideos")
+	_getAllLinkedVideos(baton, callback) {
+		baton.addMethod("_getAllLinkedVideos")
 		this._getFilesFromDir(baton, LINKED_FOLDER, callback)
 	},
 	_getAllCompilationVideos(baton, callback) {
@@ -185,7 +185,7 @@ module.exports = {
 		var t = this;
 		var baton = t._getBaton("get_allLinkedVides", null, orig_callback);
 
-		this._getAlLinkedVideos(baton, function(linked_videos) {
+		this._getAllLinkedVideos(baton, function(linked_videos) {
 			baton.callOrigCallback({
 				videos: linked_videos.map(function(file) {
 					return file[0]
@@ -213,7 +213,7 @@ module.exports = {
 
 
 		function dataLoader(callback) {
-			t._getAlLinkedVideos(baton, function(linked_videos) {
+			t._getAllLinkedVideos(baton, function(linked_videos) {
 				t._getAllCompilationVideos(baton, function(compilation_videos) {
 					callback(linked_videos, compilation_videos)
 				})

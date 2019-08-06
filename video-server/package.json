@@ -16,7 +16,9 @@
     "fs": "0.0.1-security",
     "https": "^1.0.0",
     "mocha": "^6.2.0",
-    "python-shell": "^1.0.7"
+    "mock-fs": "^4.10.1",
+    "python-shell": "^1.0.7",
+    "sinon": "^7.3.2"
   },
   "devDependencies": {},
   "scripts": {
