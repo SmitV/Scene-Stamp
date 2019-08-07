@@ -17,6 +17,7 @@
     "https": "^1.0.0",
     "mocha": "^6.2.0",
     "mock-fs": "^4.10.1",
+    "pre-commit": "^1.2.2",
     "python-shell": "^1.0.7",
     "sinon": "^7.3.2"
   },
@@ -25,6 +26,9 @@
     "start": "npm test",
     "test": "mocha"
   },
+  "pre-commit": [
+    "test"
+  ],
   "author": "",
   "license": "ISC"
 }
