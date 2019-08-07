@@ -221,15 +221,23 @@ module.exports = {
 		}
 
 		function validateCreateCompilationParams(linked_videos, compilation_videos, callback) {
-
-			if (!Array.isArray(params.timestamps) || params.timestamps.length < 0) {
+			if (!Array.isArray(params.timestamps) || params.timestamps.length <= 0) {
 				baton.setError({
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params: timestamps"
 				})
 				baton.throwError()
+				return
 			}
 
+			if(!params.compilation_name || params.compilation_name.trim() == "" ){
+				baton.setError({
+					compilation_name: params.compilation_name,
+					public_message: "Invalid Params: compilation name"
+				})
+				baton.throwError()
+				return
+			}
 			var errorOccur = false;
 			if (compilation_videos.map(function(comp) {
 					return comp[0]
@@ -259,6 +267,8 @@ module.exports = {
 					})
 					errorOccur = true
 					return
+
+					//TODO : validate duration / start time for each timestamp ; add else if {} here 
 				} else {
 					el.episode_name = linked_videos.filter(function(vid) {
 						return vid[0] == el.episode_id.toString()
@@ -313,7 +323,7 @@ module.exports = {
 					ts.start_time += SUB_TIMESTAMP_DURATION
 					ts.duration -= SUB_TIMESTAMP_DURATION
 				}
-			} ;
+			};
 			subTimestamps.push(ts)
 			callback(subTimestamps)
 		}
@@ -321,9 +331,9 @@ module.exports = {
 		function breakUpTimestamps(timestamps, callback) {
 			var newTimestamps = []
 			let breakUp = timestamps.forEach(function(ts) {
-				createSubTimestamps(ts, function(subTimestamps){
+				createSubTimestamps(ts, function(subTimestamps) {
 					newTimestamps = newTimestamps.concat(subTimestamps)
-					if(timestamps.indexOf(ts) == timestamps.length - 1) callback(newTimestamps)
+					if (timestamps.indexOf(ts) == timestamps.length - 1) callback(newTimestamps)
 				})
 			})
 		}

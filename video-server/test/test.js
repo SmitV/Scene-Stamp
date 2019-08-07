@@ -12,6 +12,8 @@ var taskScript = require('../taskScript')
 
 describe('tests', function() {
 
+
+
 	var sandbox;
 	var mockFileSystemData;
 	var fakeBaton;
@@ -26,15 +28,19 @@ describe('tests', function() {
 
 	var SUB_TIMESTAMP_DURATION = 10;
 
+	function sucsessResponse(response) {
+		expect(response.error_message).to.equal(undefined);
+	}
+
 	function createSubTimestamps(ts, callback) {
 		var subTimestamps = []
-		ts.episode_name = ts.episode_id.toString()+'.mp4'
+		ts.episode_name = ts.episode_id.toString() + '.mp4'
 		while (ts.duration > SUB_TIMESTAMP_DURATION) {
 			subTimestamps.push({
 				episode_id: ts.episode_id,
 				start_time: ts.start_time,
 				duration: SUB_TIMESTAMP_DURATION,
-				episode_name: ts.episode_id.toString()+'.mp4'
+				episode_name: ts.episode_id.toString() + '.mp4'
 			})
 			if (ts.duration > SUB_TIMESTAMP_DURATION) {
 				ts.start_time += SUB_TIMESTAMP_DURATION
@@ -55,8 +61,22 @@ describe('tests', function() {
 		})
 	}
 
+	function tasksForCompilation(params, callback) {
+		createTasksFromTimestamp(params.timestamps, (newTasks) => {
+			var costructedTask = {}
+			costructedTask[params.compilation_name] = {
+				timestamps: newTasks
+			}
+			callback(costructedTask)
+		})
+
+	}
+
 	beforeEach(function() {
 		sandbox = sinon.createSandbox();
+
+		//repress the console log 
+		sandbox.stub(console, 'log').callsFake(() => {})
 
 		fakeBaton = {
 			methods: [],
@@ -169,10 +189,11 @@ describe('tests', function() {
 			var origFileContent = mockFileSystemData[UNLINKED_FOLDER][Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]]
 			action.get_linkVideoToEpisode(params, function(result) {
 				action._getAllUnlinkedVideos(fakeBaton, (linked_videos) => {
-					expect(linked_videos[unlinkedVideoName]).to.equal(null);
+					expect(mockFileSystemData[UNLINKED_FOLDER][params.unlinked_video]).to.equal(undefined);
 				})
 				expect(result.episode_id_linked).to.equal(params.episode_id);
 				expect(mockFileSystemData[LINKED_FOLDER][params.episode_id + '.mp4']).to.equal(origFileContent)
+				sucsessResponse(result)
 			})
 		})
 
@@ -243,15 +264,112 @@ describe('tests', function() {
 
 			}
 			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
-				createTasksFromTimestamp(params.timestamps, (newTasks) => {
-					var costructedTask = {}
-					costructedTask[params.compilation_name] = {
-						timestamps: newTasks
-					}
-					expect(mockFileSystemData['tasks.json']).to.equal(JSON.stringify(costructedTask));
+				tasksForCompilation(params, (content) => {
+					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_name]).to.deep.equal(content[params.compilation_name]);
+					sucsessResponse(result)
 				})
 			})
 
 		})
+
+		it('with existing tasks, should update task file, with compilation tasks', function() {
+			var existingTimestampParams = {
+				compilation_name: "InTest Existing Compilation",
+				timestamps: [{
+					episode_id: 0,
+					start_time: 2,
+					duration: 13
+				}, {
+					episode_id: 0,
+					start_time: 10,
+					duration: 20
+				}]
+			}
+
+			var params = {
+				compilation_name: "InTest Compilation",
+				timestamps: [{
+					episode_id: 1,
+					start_time: 90,
+					duration: 13
+				}, {
+					episode_id: 0,
+					start_time: 3,
+					duration: 19
+				}, {
+					episode_id: 0,
+					start_time: 300,
+					duration: 5
+				}]
+			}
+
+			function setUpExistingTasks(callback) {
+				tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+					console.log('done creating existing timestamps')
+					mockFileSystemData['tasks.json'] = JSON.stringify(content)
+					mockFs(mockFileSystemData)
+					callback(content)
+				})
+			}
+
+			setUpExistingTasks(function(existingTaskContent) {
+				action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+					tasksForCompilation(params, (content) => {
+						var taskFileContent = JSON.parse(mockFileSystemData['tasks.json'])
+						expect(taskFileContent[existingTimestampParams.compilation_name]).to.deep.equal(existingTaskContent[existingTimestampParams.compilation_name]);
+						expect(taskFileContent[content.compilation_name]).to.deep.equal(content[content.compilation_name]);
+						sucsessResponse(result)
+					})
+				})
+			})
+
+		})
+
+		it('should throw invalid param; compilation name', function(){
+			var params = {
+				timestamps: [{
+					episode_id: 1,
+					start_time: 90,
+					duration: 13
+				}]
+			}
+
+			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				console.log(result)
+				expect(result.error_message).to.equal('Invalid Params: compilation name')
+			})
+		})
+
+		it('should throw invalid param; timestamp missing', function(){
+			var params = {
+				compilation_name:'InTest Compilation',
+				timestamps: []
+			}
+
+			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				console.log(result)
+				expect(result.error_message).to.equal('Invalid Params: timestamps')
+			})
+		})
+
+		it('should throw invalid param; invalid episode id', function(){
+			var params = {
+				compilation_name:'InTest Compilation',
+				timestamps: [{
+					episode_id: 101,//invalid episode id
+					start_time: 90,
+					duration: 13
+				}]
+			}
+
+			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				console.log(result)
+				expect(result.error_message).to.equal('Invalid Params: episode id not present on server')
+			})
+		})
+
+
+
+		//invalid params ; compilation(invalid, already there) , timestamps(invalid episode id, )
 	})
 })
