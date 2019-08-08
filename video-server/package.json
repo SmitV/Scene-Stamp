@@ -21,7 +21,9 @@
     "python-shell": "^1.0.7",
     "sinon": "^7.3.2"
   },
-  "devDependencies": {},
+  "repository": {
+    "type": "git"
+  },
   "scripts": {
     "start": "npm test",
     "test": "mocha"
