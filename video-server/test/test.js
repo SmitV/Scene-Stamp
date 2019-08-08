@@ -42,7 +42,7 @@ describe('tests', function() {
 				duration: SUB_TIMESTAMP_DURATION,
 				episode_name: ts.episode_id.toString() + '.mp4',
 			}
-			if(ts.completed != undefined) data.completed = ts.completed
+			if (ts.completed != undefined) data.completed = ts.completed
 			subTimestamps.push(data)
 			if (ts.duration > SUB_TIMESTAMP_DURATION) {
 				ts.start_time += SUB_TIMESTAMP_DURATION
@@ -78,7 +78,7 @@ describe('tests', function() {
 		sandbox = sinon.createSandbox();
 
 		//repress the console log 
-		//sandbox.stub(console, 'log').callsFake(() => {})
+		sandbox.stub(console, 'log').callsFake(() => {})
 
 		fakeBaton = {
 			methods: [],
@@ -436,7 +436,7 @@ describe('tests', function() {
 					compilation_name: existingTimestampParams.compilation_name
 				}, function(result) {
 					sucsessResponse(result)
-					
+
 					// even if the percentage is 100, we only update completed in the 'updateTask' taskScript function
 					expect(result.completed).to.equal(false)
 					expect(result.percentage).to.equal(1);
@@ -444,15 +444,15 @@ describe('tests', function() {
 			})
 		})
 
-		it('should throw invalid param; invalid compilation name', function(){
+		it('should throw invalid param; invalid compilation name', function() {
 
-				var compilation_name = "InTest Existing Compilation"
-				action.get_CompilationVideoStatus({
-					compilation_name: compilation_name
-				}, function(result) {
-					console.log(result)
-					expect(result.error_message).to.equal('Invalid compilation name: compilation does not exist')
-				})
+			var compilation_name = "InTest Existing Compilation"
+			action.get_CompilationVideoStatus({
+				compilation_name: compilation_name
+			}, function(result) {
+				console.log(result)
+				expect(result.error_message).to.equal('Invalid compilation name: compilation does not exist')
+			})
 
 		})
 

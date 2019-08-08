@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "stores videos for scene stamp ; api's to store episode files and create compilation videos",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "pre-commit": [
+    "test"
+  ],
   "dependencies": {
     "assert": "^2.0.0",
     "async": "^3.1.0",
@@ -21,16 +31,6 @@
     "python-shell": "^1.0.7",
     "sinon": "^7.3.2"
   },
-  "repository": {
-    "type": "git"
-  },
-  "scripts": {
-    "start": "npm test",
-    "test": "mocha"
-  },
-  "pre-commit": [
-    "test"
-  ],
   "author": "",
   "license": "ISC"
 }
