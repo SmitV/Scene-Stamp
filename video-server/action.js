@@ -370,11 +370,11 @@ module.exports = {
 		taskScript.getStatus(params.compilation_name, function(status) {
 			if (status.completed) {
 				t._assertCompilationNameExists(baton, params.compilation_name, function() {
-					baton.orig_callback(status)
+					baton.callOrigCallback(status)
 				})
 				return
 			}
-			baton.orig_callback(status)
+			baton.callOrigCallback(status)
 		})
 
 	},

@@ -51,9 +51,14 @@ module.exports = {
 	PYTHON_PATH: PYTHON_PATH,
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
-	
-	getAllDirectories(){
-		return {ROOT_DIR, UNLINKED_FOLDER, LINKED_FOLDER, COMPILATION_FOLDER}
+
+	getAllDirectories() {
+		return {
+			ROOT_DIR,
+			UNLINKED_FOLDER,
+			LINKED_FOLDER,
+			COMPILATION_FOLDER
+		}
 	},
 
 	updateTasks() {
@@ -198,6 +203,7 @@ module.exports = {
 		})
 	},
 
+	//unless all the timestamps are done, and 'updateTasks' has removed the timestamp tasks from the file, the completed task is 'false'
 	getStatus(comp_name, callback) {
 		var t = this;
 
