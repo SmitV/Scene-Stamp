@@ -2,6 +2,8 @@ var fs = require('fs')
 var ps = require('python-shell')
 var async = require('async')
 
+var cp = require('child_process')
+
 var TASK_FILE_PATH = './tasks.json'
 
 var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
@@ -157,6 +159,9 @@ module.exports = {
 
 	},
 
+
+	//TODO: convert to child_process.spawn instead of python-shell
+	//easier to mock in tests
 	_callVideoCut(source_file, compilation_video, start_time, duration, indexOfTimestamp) {
 		var t = this
 
