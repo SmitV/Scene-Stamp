@@ -230,7 +230,7 @@ module.exports = {
 				return
 			}
 
-			if(!params.compilation_name || params.compilation_name.trim() == "" ){
+			if (!params.compilation_name || params.compilation_name.trim() == "") {
 				baton.setError({
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params: compilation name"

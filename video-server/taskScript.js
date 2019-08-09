@@ -48,6 +48,8 @@ General Flow:
 
 module.exports = {
 
+	CURRENT_TASKS: currentTasks,
+
 	PYTHON_PATH: PYTHON_PATH,
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
@@ -84,7 +86,6 @@ module.exports = {
 		}
 
 		this._readTaskFile(function(tasks) {
-
 			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_name) {
 				return !currentTasks.includes(comp_name)
 			}).filter(function(task) {

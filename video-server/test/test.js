@@ -1,6 +1,8 @@
 var assert = require('assert');
 const expect = require('chai').expect;
 var sinon = require('sinon')
+var events = require('events')
+var ps = require('python-shell')
 
 var mockFs = require('mock-fs')
 var fs = require('fs')
@@ -78,7 +80,7 @@ describe('tests', function() {
 		sandbox = sinon.createSandbox();
 
 		//repress the console log 
-		sandbox.stub(console, 'log').callsFake(() => {})
+		//sandbox.stub(console, 'log').callsFake(() => {})
 
 		fakeBaton = {
 			methods: [],
@@ -147,6 +149,7 @@ describe('tests', function() {
 			mockFs(mockFileSystemData)
 			callback()
 		})
+
 	})
 
 	afterEach(function() {
@@ -419,7 +422,7 @@ describe('tests', function() {
 					episode_id: 0,
 					start_time: 10,
 					duration: 20,
-					completed:true
+					completed: true
 				}]
 			}
 
@@ -436,7 +439,6 @@ describe('tests', function() {
 					compilation_name: existingTimestampParams.compilation_name
 				}, function(result) {
 					sucsessResponse(result)
-
 					// even if the percentage is 100, we only update completed in the 'updateTask' taskScript function
 					expect(result.completed).to.equal(false)
 					expect(result.percentage).to.equal(1);
@@ -450,7 +452,6 @@ describe('tests', function() {
 			action.get_CompilationVideoStatus({
 				compilation_name: compilation_name
 			}, function(result) {
-				console.log(result)
 				expect(result.error_message).to.equal('Invalid compilation name: compilation does not exist')
 			})
 
@@ -458,5 +459,115 @@ describe('tests', function() {
 
 	})
 
+	describe('update task ', function() {
+
+		async function runUpdateTasks(callback) {
+			async function run() {
+				taskScript.updateTasks()
+				return
+			}
+
+			await run();
+			callback()
+		}
+
+
+
+		var existingTimestampParams = {
+			compilation_name: "InTest Existing Compilation",
+			timestamps: [{
+				episode_id: 0,
+				start_time: 2,
+				duration: 3,
+				completed: true
+			}, {
+				episode_id: 0,
+				start_time: 10,
+				duration: 19,
+			}]
+		}
+
+		var videoCutSpy;
+
+		function setUpSpy(){
+			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
+		}
+
+
+		function setUpExistingTasks(callback) {
+			tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+				mockFileSystemData['tasks.json'] = JSON.stringify(content)
+				mockFs(mockFileSystemData)
+				callback(content)
+			})
+		}
+
+		it('should run video cut on next incomplete task', function() {
+			setUpSpy();
+
+			setUpExistingTasks(tasks => {
+				runUpdateTasks(function() {
+					var timestampTask = tasks[existingTimestampParams.compilation_name].timestamps.find(function(task) {
+						return !task.completed
+					})
+					expect(videoCutSpy.calledOnce).to.equal(true)
+					expect(taskScript.CURRENT_TASKS.includes(existingTimestampParams.compilation_name)).to.equal(true)
+					expect(videoCutSpy.getCall(0).args).to.deep.equal([timestampTask.episode_id.toString() + '.mp4', existingTimestampParams.compilation_name, timestampTask.start_time, timestampTask.duration, 1])
+				});
+
+			})
+		})
+
+		it('should not run video cut on next incomplete task, when compilation creation currently running', function() {
+			setUpSpy();
+
+			taskScript.CURRENT_TASKS.push(existingTimestampParams.compilation_name)
+
+			setUpExistingTasks(tasks => {
+				runUpdateTasks(function() {
+					expect(videoCutSpy.calledOnce).to.equal(false)
+				});
+
+			})
+		})
+
+		/*
+		var childSpawnEmitter = new events.EventEmitter();
+
+		function setUpSpawnEmitter(){
+			childSpawnEmitter.stdout = new events.EventEmitter();
+			sandbox.stub(ps.PythonShell, 'run').returns(childSpawnEmitter);
+		}
+
+		function emit(event, output){
+			childSpawnEmitter.stdout.emit(event, output);
+		}
+
+		
+		it('should update the task file after video cut is finished', function() {
+			setUpSpawnEmitter();
+
+			setUpExistingTasks(tasks => {
+				runUpdateTasks(function() {
+					emit('message','this is a test')
+					var timestampTask = tasks[existingTimestampParams.compilation_name].timestamps.find(function(task) {
+						return !task.completed
+					})
+				});
+
+			})
+		})
+
+		*/
+
+	})
+
+	//updateTask
+	/*
+		No compilation running, incomplete tasks in file
+		Compilation running, incomplete task in file
+		One compilation running, incpolete task of another compilation in file
+		Compilation not running, all completed tasks in file 
+	*/
 	//download video 
 })
