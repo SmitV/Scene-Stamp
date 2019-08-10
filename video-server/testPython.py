@@ -12,4 +12,8 @@ def printAndFlush(data):
 	print(data)
 	sys.stdout.flush()
 
-printAndFlush("Python imports works")
+def printError(data):
+	print(data)
+	sys.stderr.flush()
+
+printAndFlush('test data printing')
