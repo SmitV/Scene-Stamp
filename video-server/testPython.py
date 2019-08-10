@@ -1,8 +1,8 @@
-from moviepy.editor import *
 from os import path
 import sys, getopt
 import random
 import json
+from moviepy.editor import *
 
 # Tests to ensure python can run on server
 
