@@ -1,9 +1,7 @@
 var fs = require('fs')
 var async = require('async')
 
-const {
-	spawn
-} = require('child_process')
+const child_process = require('child_process')
 
 var TASK_FILE_PATH = './tasks.json'
 
@@ -128,7 +126,6 @@ module.exports = {
 	},
 
 	_updateRemoveCompFromTask(comp_name) {
-		console.log('_updateRemoveCompFromTask')
 		var t = this;
 		t._readTaskFile(function(tasks) {
 			delete tasks[comp_name]
@@ -149,7 +146,6 @@ module.exports = {
 	},
 
 	_updateTimestampToComplete(comp_name, indexOfTimestamp, callback) {
-		console.log('_updateTimestampToComplete')
 		var t = this;
 		t._readTaskFile(function(tasks) {
 			tasks[comp_name].timestamps[indexOfTimestamp].completed = true
@@ -174,7 +170,6 @@ module.exports = {
 		}
 
 		function onData(data) {
-			console.log('\nvideo cut data : '+ data)
 			pythonMessages.push(data)
 		}
 
@@ -206,13 +201,11 @@ module.exports = {
 
 
 		function run() {
-			spawnProcess = spawn('python', [file].concat([...args]), { stdio: ['pipe', 'pipe']});
+			spawnProcess = child_process.spawn('python', [file].concat([...args]), { stdio: ['pipe', 'pipe']});
 
-			const out = []
 			spawnProcess.stdout.on(
 				'data',
 				(data) => {
-					console.log('data '+bufferToString(data))
 					onData(bufferToString(data))
 				}
 			);
