@@ -1,8 +1,9 @@
 var fs = require('fs')
-var ps = require('python-shell')
 var async = require('async')
 
-var cp = require('child_process')
+const {
+	spawn
+} = require('child_process')
 
 var TASK_FILE_PATH = './tasks.json'
 
@@ -12,9 +13,6 @@ var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
 var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
 var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
 var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
-
-//var PYTHON_PATH = '/usr/bin/python'
-var PYTHON_PATH = '/Users/kunal/anaconda2/bin/python'
 
 var VIDEO_CUT_FILE = 'video_cut.py'
 var TEST_PYTHON_FILE = 'testPython.py'
@@ -50,12 +48,16 @@ General Flow:
 
 module.exports = {
 
-	PYTHON_PATH: PYTHON_PATH,
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
-	
-	getAllDirectories(){
-		return {ROOT_DIR, UNLINKED_FOLDER, LINKED_FOLDER, COMPILATION_FOLDER}
+
+	getAllDirectories() {
+		return {
+			ROOT_DIR,
+			UNLINKED_FOLDER,
+			LINKED_FOLDER,
+			COMPILATION_FOLDER
+		}
 	},
 
 	updateTasks() {
@@ -136,7 +138,6 @@ module.exports = {
 	},
 
 	_updateErrorWithinTasks(comp_name, err) {
-		console.log('_updateErrorWithinTasks')
 		var t = this;
 		t._readTaskFile(function(tasks) {
 			tasks[comp_name].error = err
@@ -159,48 +160,81 @@ module.exports = {
 
 	},
 
-
-	//TODO: convert to child_process.spawn instead of python-shell
-	//easier to mock in tests
 	_callVideoCut(source_file, compilation_video, start_time, duration, indexOfTimestamp) {
-		var t = this
-
+		var t = this;
 		var pythonMessages = []
-
 		var comp_name = compilation_video.split('.')[0]
-		var options = {
-			mode: 'text',
-			pythonPath: PYTHON_PATH,
-			args: [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration]
-		}
 
-		function handleError(err) {
+		function onError(err) {
 			t._updateErrorWithinTasks(comp_name, {
 				messages: pythonMessages,
 				err: err
 			})
-			t._throwError({
-				messages: pythonMessages,
-				err: err
-			})
 		}
-		ps.PythonShell.run(VIDEO_CUT_FILE, options, function(err, data) {
-			if (err) {
-				handleError(err)
-				return
-			}
-			pythonMessages.push('Video Cut Python On Start Callback')
-		}).on('message', function(data) {
+
+		function onData(data) {
+			console.log('\nvideo cut data : '+ data)
 			pythonMessages.push(data)
-		}).end(function(err, data) {
-			if (err) {
-				handleError(err)
-				return
-			}
+		}
+
+		function onExit() {
 			t._updateTimestampToComplete(comp_name, indexOfTimestamp, function() {
 				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
 			})
-		})
+		}
+
+		t._runPythonScript(VIDEO_CUT_FILE, [LINKED_FOLDER + "/" + source_file, COMPILATION_FOLDER + '/' + compilation_video, start_time, duration], onData, onError, onExit)
+	},
+
+	_runPythonScript(file, args, onData, onError, onExit) {
+		var t = this;
+
+		var spawnProcess;
+
+		function handleError(err) {
+			spawnProcess.kill()
+			t._throwError({
+				err: err
+			})
+			onError(err)
+		}
+
+		function bufferToString(buffer) {
+			return Buffer.from(buffer).toString()
+		}
+
+
+		function run() {
+			spawnProcess = spawn('python', [file].concat([...args]), { stdio: ['pipe', 'pipe']});
+
+			const out = []
+			spawnProcess.stdout.on(
+				'data',
+				(data) => {
+					console.log('data '+bufferToString(data))
+					onData(bufferToString(data))
+				}
+			);
+
+			spawnProcess.stderr.on(
+				'data',
+				(data) => {
+					handleError(bufferToString(data))
+				}
+			);
+
+			spawnProcess.on('exit', (code, signal) => {
+				spawnProcess.kill();
+				onExit()
+
+			});
+		}
+
+		try {
+			run()
+		} catch (e) {
+			handleError(e)
+		}
 	},
 
 	getStatus(comp_name, callback) {
@@ -288,39 +322,23 @@ module.exports = {
 	 * Will run before loops run on the server 
 	 */
 
-	callTestPythonScript(callback) {
-		var t = this
-
+	 callTestPythonScript(callback) {
+		var t = this;
 		var pythonMessages = []
-		var options = {
-			mode: 'text',
-			pythonPath: PYTHON_PATH,
-		}
 
-		function handleError(err) {
-			t._throwError({
-				messages: pythonMessages,
-				err: err
-			})
+		function onError(err) {
+			console.log('error occured'+ err)
 			callback(err)
 		}
-		ps.PythonShell.run(TEST_PYTHON_FILE, options, function(err, data) {
-			if (err) {
-				handleError(err)
-				return
-			}
-			pythonMessages.push('Video Cut Python On Start Callback')
-		}).on('error', err => {
-			console.log('error has caught')
-			handleError(err)
-		}).on('message', function(data) {
+
+		function onData(data) {
 			pythonMessages.push(data)
-		}).end(function(err, data) {
-			if (err) {
-				handleError(err)
-				return
-			}
+		}
+
+		function onExit() {
 			callback()
-		})
+		}
+
+		t._runPythonScript(TEST_PYTHON_FILE, [], onData, onError, onExit)
 	},
 }
