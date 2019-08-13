@@ -6,9 +6,11 @@ var child_process = require('child_process')
 
 var mockFs = require('mock-fs')
 var fs = require('fs')
+var nock = require('nock')
 
 var action = require('../action')
 var taskScript = require('../taskScript')
+var cred = require('../credentials.js')
 
 
 
@@ -101,9 +103,8 @@ describe('tests', function() {
 			episode_id: 3
 		}]
 
-		sandbox.stub(action, '_getEpisodeData').callsFake((baton, callback) => {
-			callback(mockEpisodeData)
-		})
+
+		nock(cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(200, mockEpisodeData)
 
 		//mock the file system 
 		mockFileSystemData = {
@@ -201,6 +202,21 @@ describe('tests', function() {
 				expect(mockFileSystemData[LINKED_FOLDER][params.episode_id + '.mp4']).to.equal(origFileContent)
 				sucsessResponse(result)
 			})
+		})
+
+		it('should throw for error in getEpisodeData call', function(){
+			var error = {id: 101, error:'InTest Timestamp Error'};
+			 nock.cleanAll()
+			nock(cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
+			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
+			var params = {
+				unlinked_video: unlinkedVideoName.split('.')[0],
+				episode_id: mockEpisodeData[2].episode_id
+			}
+			action.get_linkVideoToEpisode(params, function(result) {
+				expect(result).to.deep.equal(error)
+			})
+
 		})
 
 		it('should throw for invalid unlinked video', function() {

@@ -433,18 +433,27 @@ module.exports = {
 
 	_getEpisodeData(baton, callback) {
 		var t = this;
-		var req = https.get('https://scene-stamp-server.herokuapp.com/getEpisodeData', function(res) {
-			res.on('data', function(chunk) {
-				if (chunk.error_message) {
-					baton.setError({
-						timestamp_server_error: chunk,
-						public_message: 'Internal Error Occured'
-					})
-					baton.throwError()
+
+		var req = https.get(cred.TIMESTAMP_SERVER_URL+"/getEpisodeData", function(res) {
+			res.on('data', function(data) {
+				var parsedData = JSON.parse(Buffer.from(data).toString());
+				if(res.statusCode == 200 ){
+					callback(parsedData)
+				}else{
+					baton.setError(parsedData)
+					baton.throwError(true /*keepErrorMessage*/)
+					return
 				}
-				callback(JSON.parse(chunk.toString()))
 			});
-		});
+		}).on('error', function(err) {
+			baton.setError({
+				timestamp_server_error: err,
+				error_details: 'Error from making https call to episode data'
+			})
+			baton.throwError()
+			return
+		})
+		req.end()
 	},
 
 	/**
@@ -479,20 +488,20 @@ module.exports = {
 				this.duration = end_time.getTime() - this.start_time
 				this.err.push(JSON.stringify( error));
 			},
-			throwError: function() {
-				t._generateError(this)
+			throwError: function(keepErrorMessage) {
+				t._generateError(this,keepErrorMessage)
 			}
 		}
 	},
 
 
-	_generateError(baton) {
-		var response = {
+	_generateError(baton,keepErrorMessage) {
+		var response = (keepErrorMessage ? JSON.parse(baton.err[0]) : {
 			'id': baton.id,
 			'error_message': baton.err.map(function(error) {
 				return (JSON.parse(error).public_message ? JSON.parse(error).public_message : 'An internal error has occured')
 			}).join('.')
-		};
+		});
 		baton.orig_callback(response)
 		delete baton.orig_callback
 		delete baton.addMethod
