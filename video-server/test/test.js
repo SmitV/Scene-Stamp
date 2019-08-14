@@ -80,7 +80,10 @@ describe('tests', function() {
 	}
 
 	beforeEach(function() {
+
 		sandbox = sinon.createSandbox();
+
+		taskScript._resetCurrentTasks()
 
 		//repress the console log 
 		sandbox.stub(console, 'log').callsFake(() => {})
@@ -157,6 +160,7 @@ describe('tests', function() {
 	afterEach(function() {
 		sandbox.restore();
 		mockFs.restore();
+		nock.cleanAll()
 	})
 
 	it('should mock file system', function() {
@@ -185,7 +189,7 @@ describe('tests', function() {
 		})
 	})
 
-	describe('linking episode ', function() {
+	context('linking episode ', function() {
 
 		it('should link unlinked video to episode', function() {
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
@@ -204,9 +208,12 @@ describe('tests', function() {
 			})
 		})
 
-		it('should throw for error in getEpisodeData call', function(){
-			var error = {id: 101, error:'InTest Timestamp Error'};
-			 nock.cleanAll()
+		it('should throw for error in getEpisodeData call', function() {
+			var error = {
+				id: 101,
+				error: 'InTest Timestamp Error'
+			};
+			nock.cleanAll()
 			nock(cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
@@ -269,7 +276,7 @@ describe('tests', function() {
 
 	})
 
-	describe('create compilation', function() {
+	context('create compilation', function() {
 
 		it('should update task file with compilation tasks', function() {
 			var params = {
@@ -389,7 +396,7 @@ describe('tests', function() {
 
 	//compilation video status 
 
-	describe('compilation video status', function() {
+	context('compilation video status', function() {
 
 		it('should get compilation video status (incomplete)', function() {
 
@@ -476,16 +483,11 @@ describe('tests', function() {
 
 	})
 
-	describe('update task ', function() {
+	context('update task ', function() {
 
 		async function runUpdateTasks(callback) {
-			async function run() {
-				taskScript.updateTasks()
-				return
-			}
-
-			await run();
-			callback()
+			taskScript.updateTasks()
+			setTimeout(callback, 100)
 		}
 
 		function setUpExistingTasks(callback) {
@@ -504,71 +506,10 @@ describe('tests', function() {
 			})
 		}
 
-		var existingTimestampParams = {
-			compilation_name: "InTest Existing Compilation",
-			timestamps: [{
-				episode_id: 0,
-				start_time: 2,
-				duration: 3,
-				completed: true
-			}, {
-				episode_id: 0,
-				start_time: 10,
-				duration: 19,
-			}]
-		}
-
+		var existingTimestampParams;
 		var videoCutSpy;
 
-		function setUpSpy() {
-			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
-		}
-
-		it('should run video cut on next incomplete task', function() {
-			setUpSpy();
-
-			setUpTasksAndRunUpdateTasks((tasks) => {
-				var timestampTask = tasks[existingTimestampParams.compilation_name].timestamps.find(function(task) {
-					return !task.completed
-				})
-				expect(videoCutSpy.calledOnce).to.equal(true)
-				expect(taskScript.CURRENT_TASKS.includes(existingTimestampParams.compilation_name)).to.equal(true)
-				expect(videoCutSpy.getCall(0).args).to.deep.equal([timestampTask.episode_id.toString() + '.mp4', existingTimestampParams.compilation_name, timestampTask.start_time, timestampTask.duration, 1])
-			})
-		})
-
-		it('should not run next task, since error exists ', function() {
-
-			setUpSpy();
-			existingTimestampParams.error = 'InTest Error'
-
-			setUpTasksAndRunUpdateTasks(function(tasks){
-				expect(videoCutSpy.calledOnce).to.equal(false)
-				expect(taskScript.CURRENT_TASKS.includes(existingTimestampParams.compilation_name)).to.equal(false)
-			})
-		})
-
-		it('should not run video cut on next incomplete task, when compilation creation currently running', function() {
-			setUpSpy();
-			taskScript.CURRENT_TASKS.push(existingTimestampParams.compilation_name)
-
-			setUpTasksAndRunUpdateTasks((tasks) => {
-				expect(videoCutSpy.calledOnce).to.equal(false)
-			});
-		})
-
-		it('should remove task whose all timestamps are complete', function() {
-
-			setUpSpy();
-			existingTimestampParams.timestamps[1].completed = true
-
-			setUpTasksAndRunUpdateTasks((tasks) => {
-				expect(videoCutSpy.calledOnce).to.equal(false)
-				expect(JSON.parse(mockFileSystemData['tasks.json'])[existingTimestampParams.compilation_name]).to.equal(undefined);
-			})
-		})
-
-		var childSpawnEmitter = new events.EventEmitter();
+		var childSpawnEmitter;
 
 		function setUpSpawnEmitter() {
 			childSpawnEmitter.stdout = new events.EventEmitter();
@@ -584,7 +525,78 @@ describe('tests', function() {
 			else childSpawnEmitter.stdout.emit('data', output);
 		}
 
-		it('should update the task file after video cut is finished', function() {
+		beforeEach(function() {
+			existingTimestampParams = {
+				compilation_name: "InTest Existing Compilation",
+				timestamps: [{
+					episode_id: 0,
+					start_time: 2,
+					duration: 3,
+					completed: true
+				}, {
+					episode_id: 0,
+					start_time: 10,
+					duration: 19,
+				}]
+			}
+
+			videoCutSpy = null
+
+			childSpawnEmitter = new events.EventEmitter();
+
+		})
+
+		function setUpSpy() {
+			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
+		}
+
+		it('should run video cut on next incomplete task', function(done) {
+			setUpSpy();
+
+			setUpTasksAndRunUpdateTasks((tasks) => {
+				var timestampTask = tasks[existingTimestampParams.compilation_name].timestamps.find(function(task) {
+					return !task.completed
+				})
+				expect(videoCutSpy.calledOnce).to.equal(true)
+				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_name)).to.equal(true)
+				expect(videoCutSpy.getCall(0).args).to.deep.equal([timestampTask.episode_id.toString() + '.mp4', existingTimestampParams.compilation_name, timestampTask.start_time, timestampTask.duration, 1])
+				done()
+			})
+		})
+
+		it('should not run next task, since error exists ', function(done) {
+			setUpSpy();
+			existingTimestampParams.error = 'InTest Error'
+
+			setUpTasksAndRunUpdateTasks(function(tasks) {
+				expect(videoCutSpy.calledOnce).to.equal(false)
+				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_name)).to.equal(false)
+				done()
+			})
+		})
+
+		it('should not run video cut on next incomplete task, when compilation creation currently running', function(done) {
+			setUpSpy();
+			taskScript._getCurrentTasks().push(existingTimestampParams.compilation_name)
+
+			setUpTasksAndRunUpdateTasks((tasks) => {
+				expect(videoCutSpy.calledOnce).to.equal(false)
+				done()
+			});
+		})
+
+		it('should remove task whose all timestamps are complete', function(done) {
+			setUpSpy();
+			existingTimestampParams.timestamps[1].completed = true
+
+			setUpTasksAndRunUpdateTasks((tasks) => {
+				expect(videoCutSpy.calledOnce).to.equal(false)
+				expect(JSON.parse(mockFileSystemData['tasks.json'])[existingTimestampParams.compilation_name]).to.equal(undefined)
+				done()
+			})
+		})
+
+		it('should update the task file after video cut is finished', function(done) {
 			setUpSpawnEmitter();
 			setUpTasksAndRunUpdateTasks((tasks) => {
 				var indexOfTaskToBeCompleted = tasks[existingTimestampParams.compilation_name].timestamps.indexOf(tasks[existingTimestampParams.compilation_name].timestamps.find(function(task) {
@@ -597,12 +609,14 @@ describe('tests', function() {
 				childSpawnEmitter.emit('exit');
 				setTimeout(() => {
 					expect(currentTaskCompletion()).to.equal(true);
+					done()
 				}, 20)
+
 
 			})
 		})
 
-		it('should update the task file with messages and error after video cut throws error', function() {
+		it('should update the task file with messages and error after video cut throws error', function(done) {
 			setUpSpawnEmitter();
 			setUpTasksAndRunUpdateTasks((tasks) => {
 				var currentTaskError = () => {
@@ -614,6 +628,7 @@ describe('tests', function() {
 				setTimeout(() => {
 					expect(currentTaskError().messages).to.contain('InTest Data')
 					expect(currentTaskError().err).to.contain('InTest Error');
+					done()
 				}, 20)
 
 			})

@@ -51,6 +51,17 @@ module.exports = {
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
 
+
+
+	_getCurrentTasks(){
+		return currentTasks
+	},
+	_resetCurrentTasks(){
+		currentTasks = [];
+	},
+
+	//above methods needed for testing purposes ONLY
+
 	getAllDirectories() {
 		return {
 			ROOT_DIR,
@@ -74,6 +85,7 @@ module.exports = {
 			for (var i = 0; i < timestamps.length; i++) {
 				if (!timestamps[i].completed) {
 					var ts = timestamps[i]
+					console.log('pushing to current tasks --------+++================')
 					currentTasks.push(comp_name)
 					console.log('compilation started : ' + comp_name)
 					t._callVideoCut(ts.episode_name, comp_name, ts.start_time, ts.duration, i)
