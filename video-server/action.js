@@ -275,9 +275,7 @@ module.exports = {
 		dataLoader(function(linked_videos, compilation_videos) {
 			validateCreateCompilationParams(linked_videos, compilation_videos, function() {
 				t._postCompilation(baton, params, function(updated_params) {
-					console.log('the compilation id recieved')
 					updated_params.compilation_id = updated_params.compilation_id.toString()
-					console.log(updated_params.compilation_id)
 					t._updateTaskFile(baton, updated_params.compilation_id, params.timestamps, function() {
 						baton.callOrigCallback({
 							compilation_id: updated_params.compilation_id,
@@ -338,9 +336,6 @@ module.exports = {
 			currentTasks[comp_id] = {
 				timestamps: timestamps
 			}
-			console.log('update task file')
-			console.log(timestamps)
-			console.log(comp_id)
 			fs.writeFile(TASK_FILE_PATH, JSON.stringify(currentTasks), function(err) {
 				if (err) {
 					baton.setError({
