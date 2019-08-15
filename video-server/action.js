@@ -239,18 +239,8 @@ module.exports = {
 				return
 			}
 			var errorOccur = false;
-			if (compilation_videos.map(function(comp) {
-					return comp[0]
-				}).includes(params.compilation_name)) {
-				baton.setError({
-					compilation_name: params.compilation_name,
-					public_message: "Invalid Params:compilation with same name exists"
-				})
-				baton.throwError()
-				return
-			}
 			params.timestamps.forEach(function(el) {
-				if (typeof el.episode_id !== 'number' || typeof el.start_time !== 'number' || typeof el.duration !== 'number') {
+				if (typeof el.episode_id !== 'number' || typeof el.start_time !== 'number' || typeof el.duration !== 'number' || typeof el.timestamp_id !== 'number') {
 					baton.setError({
 						timestamp: el,
 						public_message: "Invalid Params: invalid param in timestamp"
@@ -284,9 +274,15 @@ module.exports = {
 
 		dataLoader(function(linked_videos, compilation_videos) {
 			validateCreateCompilationParams(linked_videos, compilation_videos, function() {
-				t._updateTaskFile(baton, params.compilation_name, params.timestamps, function() {
-					baton.callOrigCallback({
-						compilation_name: params.compilation_name
+				t._postCompilation(baton, params, function(updated_params) {
+					console.log('the compilation id recieved')
+					updated_params.compilation_id = updated_params.compilation_id.toString()
+					console.log(updated_params.compilation_id)
+					t._updateTaskFile(baton, updated_params.compilation_id, params.timestamps, function() {
+						baton.callOrigCallback({
+							compilation_id: updated_params.compilation_id,
+							compilation_name: updated_params.compilation_name
+						})
 					})
 				})
 			})
@@ -307,7 +303,7 @@ module.exports = {
 		})
 	},
 
-	_updateTaskFile(baton, comp_name, timestamps, callback) {
+	_updateTaskFile(baton, comp_id, timestamps, callback) {
 		var t = this;
 
 		function createSubTimestamps(ts, callback) {
@@ -339,9 +335,12 @@ module.exports = {
 		}
 
 		function updateTaskFile(currentTasks, timestamps, callback) {
-			currentTasks[comp_name] = {
+			currentTasks[comp_id] = {
 				timestamps: timestamps
 			}
+			console.log('update task file')
+			console.log(timestamps)
+			console.log(comp_id)
 			fs.writeFile(TASK_FILE_PATH, JSON.stringify(currentTasks), function(err) {
 				if (err) {
 					baton.setError({
@@ -367,9 +366,11 @@ module.exports = {
 		var t = this
 		var baton = t._getBaton("get_CompilationVideoStatus", null, orig_callback);
 
-		taskScript.getStatus(params.compilation_name, function(status) {
+		params.compilation_id= params.compilation_id.toString()
+
+		taskScript.getStatus(params.compilation_id, function(status) {
 			if (status.completed) {
-				t._assertCompilationNameExists(baton, params.compilation_name, function() {
+				t._assertCompilationIdExists(baton, params.compilation_id, function() {
 					baton.callOrigCallback(status)
 				})
 				return
@@ -384,7 +385,7 @@ module.exports = {
 		var t = this
 		var baton = t._getBaton("get_CompilationVideo", null, orig_callback);
 
-		t._assertCompilationNameExists(baton, params.compilation_name, function(comp_path) {
+		t._assertCompilationIdExists(baton, params.compilation_id, function(comp_path) {
 			baton.orig_callback = function(data) {
 				res.download(data);
 			}
@@ -393,9 +394,9 @@ module.exports = {
 
 	},
 
-	_assertCompilationNameExists(baton, comp_name, callback) {
+	_assertCompilationIdExists(baton, comp_id, callback) {
 		var t = this
-		baton.addMethod('_assertCompilationNameExists')
+		baton.addMethod('_assertCompilationIdExists')
 
 		function dataLoader(callback) {
 			t._getAllCompilationVideos(baton, function(comp_videos) {
@@ -403,29 +404,29 @@ module.exports = {
 			})
 		}
 
-		function validate(comp_name, comp_videos, callback) {
-			if (comp_name == undefined) {
+		function validate(comp_id, comp_videos, callback) {
+			if (comp_id == undefined) {
 				baton.setError({
-					compilation_name: comp_name,
-					public_message: 'Invalid compilation name: compilation does not exist'
+					compilation_id: comp_id,
+					public_message: 'Invalid compilation id: compilation does not exist'
 				})
 				baton.throwError()
 				return
 			} else if (!comp_videos.map(function(comp) {
 					return comp[0]
-				}).includes(comp_name)) {
+				}).includes(comp_id.toString())) {
 				baton.setError({
-					compilation_name: comp_name,
-					public_message: 'Invalid compilation name: compilation does not exist'
+					compilation_id: comp_id,
+					public_message: 'Invalid compilation id: compilation does not exist'
 				})
 				baton.throwError()
 				return
 			}
-			callback(COMPILATION_FOLDER + "/" + comp_name + ".mp4")
+			callback(COMPILATION_FOLDER + "/" + comp_id + ".mp4")
 		}
 
 		dataLoader(function(comp_videos) {
-			validate(comp_name, comp_videos, function(full_compilation_path) {
+			validate(comp_id, comp_videos, function(full_compilation_path) {
 				callback(full_compilation_path)
 			})
 		})
@@ -433,26 +434,71 @@ module.exports = {
 
 	_getEpisodeData(baton, callback) {
 		var t = this;
+		baton.addMethod('_getEpisodeData')
 
-		var req = https.get(cred.TIMESTAMP_SERVER_URL+"/getEpisodeData", function(res) {
+		var options = {
+			hostname: cred.TIMESTAMP_SERVER_URL,
+			path: '/getEpisodeData',
+			method: 'GET',
+			port:443
+		}
+
+		var req = https.request(options, function(res) {
 			res.on('data', function(data) {
 				var parsedData = JSON.parse(Buffer.from(data).toString());
-				if(res.statusCode == 200 ){
+				if (res.statusCode == 200) {
 					callback(parsedData)
-				}else{
+				} else {
 					baton.setError(parsedData)
-					baton.throwError(true /*keepErrorMessage*/)
+					baton.throwError(true /*keepErrorMessage*/ )
 					return
 				}
 			});
 		}).on('error', function(err) {
 			baton.setError({
-				timestamp_server_error: err,
+				timestamp_server_error: err.toString(),
 				error_details: 'Error from making https call to episode data'
 			})
 			baton.throwError()
 			return
 		})
+		req.end()
+	},
+
+	_postCompilation(baton, params, callback) {
+		var t = this;
+		baton.addMethod('_postCompilation')
+
+		var options = {
+			hostname: cred.TIMESTAMP_SERVER_URL,
+			path: '/newCompilation',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			port:443
+		}
+		var req = https.request(options, function(res) {
+			res.on('data', function(data) {
+				var parsedData = JSON.parse(Buffer.from(data).toString());
+				if (res.statusCode == 201) {
+					callback(parsedData)
+				} else {
+					baton.setError(parsedData)
+					baton.throwError(true /*keepErrorMessage*/ )
+					return
+				}
+			});
+		}).on('error', function(err) {
+			baton.setError({
+				timestamp_server_error: err.toString(),
+				error_details: 'Error from making https call to create compilation'
+			})
+			baton.throwError()
+			req.end()
+		})
+
+		req.write(JSON.stringify(params))
 		req.end()
 	},
 
@@ -489,13 +535,13 @@ module.exports = {
 				this.err.push(JSON.stringify( error));
 			},
 			throwError: function(keepErrorMessage) {
-				t._generateError(this,keepErrorMessage)
+				t._generateError(this, keepErrorMessage)
 			}
 		}
 	},
 
 
-	_generateError(baton,keepErrorMessage) {
+	_generateError(baton, keepErrorMessage) {
 		var response = (keepErrorMessage ? JSON.parse(baton.err[0]) : {
 			'id': baton.id,
 			'error_message': baton.err.map(function(error) {

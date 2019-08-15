@@ -22,25 +22,25 @@ var currentTasks = []
 Python Child Processes - How they work
 
 General Flow:
-	-When a compilation video needs to be created, the empty file is created, and the 'task.json' file is updated to have the compilation_name and timestamps to add
+	-When a compilation video needs to be created, the empty file is created, and the 'task.json' file is updated to have the compilation_id and timestamps to add
 		-all done during the api call
 	-in interval in server, the 'updateTasks' is called
 		-will read the tasks.json file ; if there are any new tasks, it will start creating the new comp video
 		-process to create the comp video:
-			0)the currentTasks var in this file will include the comp_name
+			0)the currentTasks var in this file will include the comp_id
 				-indicated that specified compilation video is being created
-			1)A timestamp is read form the comp_name in the tasks.json
+			1)A timestamp is read form the comp_id in the tasks.json
 			2)The python script is called to append the timestamp(section with start time and duration) to the empty comp_video file
 			3)At the end, the timestamp will get new attr 'completed' = true
 			4)The next timestamp is read, goto step 2
-			5)once all timestamps have 'completed' attr, the comp_name is removed from tasks.json
+			5)once all timestamps have 'completed' attr, the comp_id is removed from tasks.json
 		-in case the server stops while creating compilation video , there is an incomplete compilation video
 			1)'updateTasks' will still get called , the first time will pass special flag
 				-will get the total duration allready added by summing durations of all timestamps with completed 
 			2)total complete duration will be passed to video_cut  , will remove all frames added by the last timestamp it was adding
 			3) resume as normal, step 2 from above
 		-in case error occurs from video_cut
-			1) in 'tasks.json', comp_name will have attr 'error': err
+			1) in 'tasks.json', comp_id will have attr 'error': err
 			2) when 'updateTasks' is called, will not start process if error exists
 */
 
@@ -59,6 +59,9 @@ module.exports = {
 	_resetCurrentTasks(){
 		currentTasks = [];
 	},
+	_pushTask(compilation_id){
+		currentTasks.push(compilation_id)
+	},
 
 	//above methods needed for testing purposes ONLY
 
@@ -74,34 +77,34 @@ module.exports = {
 	updateTasks() {
 		var t = this
 
-		function startTask(tasks, comp_name) {
-			var timestamps = tasks[comp_name].timestamps
+		function startTask(tasks, comp_id) {
+			var timestamps = tasks[comp_id].timestamps
 			if (timestamps.filter(function(ts) {
 					return ts.completed != true
 				}).length == 0) {
-				t._updateRemoveCompFromTask(comp_name)
+				t._updateRemoveCompFromTask(comp_id)
 				return
 			}
 			for (var i = 0; i < timestamps.length; i++) {
 				if (!timestamps[i].completed) {
 					var ts = timestamps[i]
-					console.log('pushing to current tasks --------+++================')
-					currentTasks.push(comp_name)
-					console.log('compilation started : ' + comp_name)
-					t._callVideoCut(ts.episode_name, comp_name, ts.start_time, ts.duration, i)
+					t._pushTask(comp_id)
+					console.log('compilation started : ' + comp_id)
+					console.log()
+					t._callVideoCut(ts.episode_name, comp_id, ts.start_time, ts.duration, i)
 					break
 				}
 			}
 		}
 
 		this._readTaskFile(function(tasks) {
-			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_name) {
-				return !currentTasks.includes(comp_name)
+			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_id) {
+				return !currentTasks.includes(comp_id)
 			}).filter(function(task) {
 				return tasks[task].error == undefined
 			});
-			tasksNotCurrentlyRunning.forEach(function(comp_name) {
-				startTask(tasks, comp_name)
+			tasksNotCurrentlyRunning.forEach(function(comp_id) {
+				startTask(tasks, comp_id)
 			})
 		})
 	},
@@ -137,32 +140,32 @@ module.exports = {
 		})
 	},
 
-	_updateRemoveCompFromTask(comp_name) {
+	_updateRemoveCompFromTask(comp_id) {
 		var t = this;
 		t._readTaskFile(function(tasks) {
-			delete tasks[comp_name]
+			delete tasks[comp_id]
 			t._updateTaskFile(tasks, function() {
-				console.log("Completed Compilation Creation : " + comp_name)
+				console.log("Completed Compilation Creation : " + comp_id)
 			})
 		})
 	},
 
-	_updateErrorWithinTasks(comp_name, err) {
+	_updateErrorWithinTasks(comp_id, err) {
 		var t = this;
 		t._readTaskFile(function(tasks) {
-			tasks[comp_name].error = err
+			tasks[comp_id].error = err
 			t._updateTaskFile(tasks, function() {
-				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
+				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
 			})
 		})
 	},
 
-	_updateTimestampToComplete(comp_name, indexOfTimestamp, callback) {
+	_updateTimestampToComplete(comp_id, indexOfTimestamp, callback) {
 		var t = this;
 		t._readTaskFile(function(tasks) {
-			tasks[comp_name].timestamps[indexOfTimestamp].completed = true
+			tasks[comp_id].timestamps[indexOfTimestamp].completed = true
 			t._updateTaskFile(tasks, function() {
-				console.log("Finished adding timestamp # " + indexOfTimestamp + " to compilation video " + comp_name)
+				console.log("Finished adding timestamp # " + indexOfTimestamp + " to compilation video " + comp_id)
 				callback()
 			})
 		})
@@ -172,10 +175,10 @@ module.exports = {
 	_callVideoCut(source_file, compilation_video, start_time, duration, indexOfTimestamp) {
 		var t = this;
 		var pythonMessages = []
-		var comp_name = compilation_video.split('.')[0]
+		var comp_id = compilation_video.split('.')[0]
 
 		function onError(err) {
-			t._updateErrorWithinTasks(comp_name, {
+			t._updateErrorWithinTasks(comp_id, {
 				messages: pythonMessages,
 				err: err
 			})
@@ -186,8 +189,8 @@ module.exports = {
 		}
 
 		function onExit() {
-			t._updateTimestampToComplete(comp_name, indexOfTimestamp, function() {
-				currentTasks.splice(currentTasks.indexOf(comp_name), 1)
+			t._updateTimestampToComplete(comp_id, indexOfTimestamp, function() {
+				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
 			})
 		}
 
@@ -244,16 +247,16 @@ module.exports = {
 	},
 
 	//unless all the timestamps are done, and 'updateTasks' has removed the timestamp tasks from the file, the completed task is 'false'
-	getStatus(comp_name, callback) {
+	getStatus(comp_id, callback) {
 		var t = this;
 
 		t._readTaskFile(function(tasks) {
-			if (tasks[comp_name] == undefined) {
+			if (tasks[comp_id] == undefined) {
 				callback({
 					completed: true
 				})
 			} else {
-				var task = tasks[comp_name]
+				var task = tasks[comp_id]
 				if (task.error) {
 					callback({
 						completed: false,
