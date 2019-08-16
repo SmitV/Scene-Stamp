@@ -121,7 +121,7 @@ module.exports = {
 		function startTask(tasks, comp_id) {
 			checkTimestamps(tasks, comp_id, function() {
 				checkBranding(tasks, comp_id, function() {
-					//no tasks to run 
+					t._updateRemoveCompFromTask(comp_id)
 				})
 			})
 		}
