@@ -1,4 +1,3 @@
-
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
 var ctx;
@@ -39,12 +38,12 @@ let STYLE_OPTIONS = {
 }
 
 var ANIMATION_TIMES = {
-		boxUp: 200,
-		increaseWidth: 500,
-		inceaseHeight: 300,
-		fadeInText: 200,
-		wait:2000
-	}
+	boxUp: 200,
+	increaseWidth: 500,
+	inceaseHeight: 300,
+	fadeInText: 200,
+	wait: 2000
+}
 
 let STYLE = STYLE_OPTIONS.light;
 
@@ -58,10 +57,10 @@ let STYLE = STYLE_OPTIONS.light;
 	//canvas.style.height = SCREEN_HEIGHT+"px"
 }*/
 
-function sampleText(){
+function sampleText() {
 	document.getElementById('username').value = "bballbreakdown"
 	document.getElementById('text').value = "Can D Angelo Russell fit with Steph Curry and the Warriors?\nCredit:@bballbreakdown"
-	doAnimation(function(){
+	doAnimation(function() {
 		console.log('done')
 	})
 }
@@ -70,7 +69,7 @@ function resetAnimationVariables() {
 	rectangle = {
 		x: 0,
 		y: 0,
-		width: 0,
+		width: 10,
 		height: 0,
 		completedAnimationDuration: [],
 		render: function(ctx) {
@@ -115,6 +114,7 @@ function createTextBox() {
 }
 
 function createImgBox() {
+	console.log('create img')
 	return {
 		x: 0,
 		y: 0,
@@ -124,9 +124,11 @@ function createImgBox() {
 		src: '',
 		render: function(ctx) {
 			ctx.save();
+			console.log('img box render:' + this.alpha)
 			var image = new Image();
 			image.src = this.src
 			var t = this;
+			ctx.globalAlpha = this.alpha;
 			image.onload = function() {
 				ctx.drawImage(image, t.x, t.y, t.width, t.height);
 			}
@@ -286,7 +288,7 @@ function panHeight(duration, fadeIn, callback) {
 	if (fadeIn) {
 		rectangle.height = getStep(duration, TWEET_HEIGHT);
 	} else {
-		rectangle.height = TWEET_HEIGHT - getStep(duration, TWEET_HEIGHT-squareWidth);
+		rectangle.height = TWEET_HEIGHT - getStep(duration, TWEET_HEIGHT - squareWidth);
 	}
 
 	rectangle.render(ctx);
@@ -306,7 +308,7 @@ function littleBoxUp(duration, fadeIn, callback) {
 		rectangle.width = getStep(duration, squareWidth);
 		rectangle.height = getStep(duration, squareWidth);
 	} else {
-		rectangle.y = maxHeight + getStep(duration, SCREEN_HEIGHT-maxHeight);
+		rectangle.y = maxHeight + getStep(duration, SCREEN_HEIGHT - maxHeight);
 		rectangle.width = squareWidth - getStep(duration, squareWidth);
 		rectangle.height = squareWidth - getStep(duration, squareWidth);
 	}
@@ -317,25 +319,29 @@ function addText(duration, fadeIn, callback) {
 
 	rectangle.render(ctx);
 
-	Object.keys(textBoxes).forEach(function(key) {
-		textBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : textBoxes[key].alpha - getStep(duration, 1))
-	})
-	Object.keys(drawBoxes).forEach(function(key) {
-		drawBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : drawBoxes[key].alpha - getStep(duration, 1))
-	})
-	Object.keys(drawBoxes).forEach(function(key) {
-		drawBoxes[key].render(ctx)
-	})
-	Object.keys(textBoxes).forEach(function(key) {
-		textBoxes[key].render(ctx)
-	})
-
-
-
 	if (shouldFinishAnimation(duration)) {
+		Object.keys(textBoxes).forEach(function(key) {
+			textBoxes[key].alpha = (fadeIn ? 1 : 0)
+			textBoxes[key].render(ctx)
+		})
+		Object.keys(drawBoxes).forEach(function(key) {
+			drawBoxes[key].alpha = (fadeIn ? 1 : 0)
+			if(fadeIn) drawBoxes[key].render(ctx)
+		})
 		callback()
 		return
 	}
+
+
+	Object.keys(textBoxes).forEach(function(key) {
+		textBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : 1 - getStep(duration, 1))
+		textBoxes[key].render(ctx)
+	})
+	Object.keys(drawBoxes).forEach(function(key) {
+		drawBoxes[key].alpha = (fadeIn ? getStep(duration, 1) : 1 - getStep(duration, 1))
+		drawBoxes[key].render(ctx)
+	})
+
 }
 
 function doAnimation(callback) {
@@ -349,8 +355,7 @@ function doAnimation(callback) {
 		setTimeout(function() {
 			startTime = Date.now()
 
-			fadeOutAnimation(function(){
-				ctx.clearRect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT);
+			fadeOutAnimation(function() {
 				callback()
 			})
 		}, ANIMATION_TIMES.wait)
@@ -374,10 +379,8 @@ function fadeOutAnimation(callback) {
 					rectangle.completedAnimationDuration.push(ANIMATION_TIMES.inceaseHeight)
 					panWidth(ANIMATION_TIMES.increaseWidth, fadeIn, function() {
 						rectangle.completedAnimationDuration.push(ANIMATION_TIMES.increaseWidth)
-						littleBoxUp(ANIMATION_TIMES.boxUp, fadeIn, function() {
-							done = true;
-							return
-						})
+						done = true;
+						return
 					})
 				})
 			});
@@ -390,15 +393,17 @@ function fadeOutAnimation(callback) {
 			fadeOutAnimation(callback)
 		});
 	} else {
+		console.log('fade out animation')
+		ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		callback()
 	}
-
-
 }
 
 function fadeInAnimation(callback) {
 
 	rectangle.x = (SCREEN_WIDTH - TWEET_WIDTH) / 2
+	rectangle.y = SCREEN_HEIGHT - ((SCREEN_HEIGHT) / 2 + TWEET_HEIGHT / 2)
+	rectangle.heigt = 10
 
 	var done = false;
 	ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -409,18 +414,14 @@ function fadeInAnimation(callback) {
 
 	setUpTextBoxes(function() {
 		updateTweetHeight(function() {
-			littleBoxUp(ANIMATION_TIMES.boxUp, fadeIn, function() {
-				rectangle.completedAnimationDuration.push(ANIMATION_TIMES.boxUp)
-				panWidth(ANIMATION_TIMES.increaseWidth, fadeIn, function() {
-					rectangle.completedAnimationDuration.push(ANIMATION_TIMES.increaseWidth)
-					panHeight(ANIMATION_TIMES.inceaseHeight, fadeIn, function() {
-						rectangle.completedAnimationDuration.push(ANIMATION_TIMES.inceaseHeight)
-						setUpTextBoxes(function() {
-							addText(ANIMATION_TIMES.fadeInText, fadeIn, function() {
-								done = true;
-								return
-							})
-						})
+			panWidth(ANIMATION_TIMES.increaseWidth, fadeIn, function() {
+				rectangle.completedAnimationDuration.push(ANIMATION_TIMES.increaseWidth)
+				panHeight(ANIMATION_TIMES.inceaseHeight, fadeIn, function() {
+					rectangle.completedAnimationDuration.push(ANIMATION_TIMES.inceaseHeight)
+					addText(ANIMATION_TIMES.fadeInText, fadeIn, function() {
+						rectangle.completedAnimationDuration.push(ANIMATION_TIMES.fadeInText)
+						done = true;
+						return
 					})
 				});
 			})
