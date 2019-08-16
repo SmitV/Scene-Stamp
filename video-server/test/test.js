@@ -31,7 +31,8 @@ describe('tests', function() {
 		ROOT_DIR,
 		UNLINKED_FOLDER,
 		LINKED_FOLDER,
-		COMPILATION_FOLDER
+		COMPILATION_FOLDER,
+		BRANDING_FOLDER
 	} = taskScript.getAllDirectories();
 
 	var SUB_TIMESTAMP_DURATION = 10;
@@ -77,6 +78,11 @@ describe('tests', function() {
 			costructedTask[params.compilation_id] = {
 				timestamps: newTasks
 			}
+			if(params.logo){
+				costructedTask[params.compilation_id].branding = {
+					logo : params.logo
+				}
+			}
 			if (params.error) costructedTask[params.compilation_id].error = params.error
 			callback(costructedTask)
 		})
@@ -90,7 +96,7 @@ describe('tests', function() {
 		taskScript._resetCurrentTasks()
 
 		//repress the console log 
-		//sandbox.stub(console, 'log').callsFake(() => {})
+		sandbox.stub(console, 'log').callsFake(() => {})
 
 		fakeBaton = {
 			methods: [],
@@ -162,6 +168,9 @@ describe('tests', function() {
 		mockFileSystemData[COMPILATION_FOLDER] = {
 			'compilation_vid_1.mp4': 'compilation 1 file ',
 			'compilation_vid_2.mp4': 'compilation 2 file ',
+		}
+		mockFileSystemData[BRANDING_FOLDER] = {
+			'test-brand-logo.png': 'test brand logo ',
 		}
 
 		mockFs(mockFileSystemData)
@@ -312,7 +321,7 @@ describe('tests', function() {
 
 	})
 
-	context.only('create compilation', function() {
+	context('create compilation', function() {
 
 		it('should update task file with compilation tasks', function(done) {
 			var params = existingTimestampParams
@@ -320,13 +329,25 @@ describe('tests', function() {
 			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
-					console.log(content)
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
 					sucsessResponse(result)
 					done()
 				})
 			})
+		})
 
+		it('should update task file with compilation tasks and branding', function(done) {
+			var params = existingTimestampParams
+			params.logo = "test-brand-logo"
+
+			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				params.compilation_id = universalCompilationId
+				tasksForCompilation(params, (content) => {
+					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
+					sucsessResponse(result)
+					done()
+				})
+			})
 		})
 
 		it('with existing tasks, should update task file, with compilation tasks', function(done) {
@@ -352,7 +373,6 @@ describe('tests', function() {
 					})
 				})
 			})
-
 		})
 
 		it('should throw invalid param; compilation name', function(done) {
@@ -385,6 +405,17 @@ describe('tests', function() {
 				done()
 			})
 		})
+
+		it('should throw invalid param; invalid logo', function(done) {
+			var params = existingTimestampParams
+			params.logo = "invalid-logo"
+
+			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				expect(result.error_message).to.equal('Invalid logo : logo name does not exist')
+				done()
+			})
+		})
+
 	})
 
 	//compilation video status 
@@ -444,6 +475,61 @@ describe('tests', function() {
 			})
 		})
 
+		it('should get compilation video status with branding (incomplete)', function(done) {
+
+			existingTimestampParams.timestamps[0].completed = true
+			existingTimestampParams.timestamps[1].completed = true
+			existingTimestampParams.compilation_id = universalCompilationId
+			existingTimestampParams.logo = "test-brand-logo"
+
+			function setUpExistingTasks(callback) {
+				tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+					mockFileSystemData['tasks.json'] = JSON.stringify(content)
+					mockFs(mockFileSystemData)
+					callback(content)
+				})
+			}
+
+			setUpExistingTasks(function() {
+				action.get_CompilationVideoStatus({
+					compilation_id: existingTimestampParams.compilation_id
+				}, function(result) {
+					sucsessResponse(result)
+					expect(result.completed).to.equal(false)
+					expect(result.percentage).to.equal(4/5);
+					done()
+				})
+			})
+		})
+
+		it('should get compilation video status with branding (complete)', function(done) {
+
+			existingTimestampParams.timestamps[0].completed = true
+			existingTimestampParams.timestamps[1].completed = true
+			existingTimestampParams.compilation_id = universalCompilationId
+			existingTimestampParams.logo = "test-brand-logo"
+
+			function setUpExistingTasks(callback) {
+				tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+					content[universalCompilationId].branding.completed = true
+					mockFileSystemData['tasks.json'] = JSON.stringify(content)
+					mockFs(mockFileSystemData)
+					callback(content)
+				})
+			}
+
+			setUpExistingTasks(function() {
+				action.get_CompilationVideoStatus({
+					compilation_id: existingTimestampParams.compilation_id
+				}, function(result) {
+					sucsessResponse(result)
+					expect(result.completed).to.equal(false)
+					expect(result.percentage).to.equal(1);
+					done()
+				})
+			})
+		})
+
 		it('should throw invalid param; invalid compilation id', function(done) {
 
 			var compilation_id = 111 //wrong compilation id
@@ -481,6 +567,7 @@ describe('tests', function() {
 			})
 		}
 		var videoCutSpy;
+		var videoLogoSpy;
 
 		var childSpawnEmitter;
 
@@ -503,6 +590,8 @@ describe('tests', function() {
 
 			videoCutSpy = null
 
+			videoLogoSpy = null;
+
 			childSpawnEmitter = new events.EventEmitter();
 
 			existingTimestampParams.compilation_id = universalCompilationId
@@ -511,6 +600,7 @@ describe('tests', function() {
 
 		function setUpSpy() {
 			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
+			videoLogoSpy = sandbox.stub(taskScript, '_callVideoLogo').callsFake(function(){})
 		}
 
 		it('should run video cut on next incomplete task', function(done) {
@@ -526,6 +616,23 @@ describe('tests', function() {
 				done()
 			})
 		})
+
+		it('should run video logo on next incomplete task', function(done) {
+			setUpSpy();
+			existingTimestampParams.timestamps[1].completed = true
+			existingTimestampParams.logo = "test-brand-logo"
+
+			setUpTasksAndRunUpdateTasks((tasks) => {
+				var timestampTask = tasks[existingTimestampParams.compilation_id].timestamps.find(function(task) {
+					return !task.completed
+				})
+				expect(videoLogoSpy.calledOnce).to.equal(true)
+				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
+				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(),"test-brand-logo"])
+				done()
+			})
+		})
+
 
 		it('should not run next task, since error exists ', function(done) {
 			setUpSpy();
@@ -576,6 +683,25 @@ describe('tests', function() {
 				}, 20)
 
 
+			})
+		})
+
+		it('should update the task file after video logo is finished', function(done) {
+			setUpSpawnEmitter();
+			existingTimestampParams.timestamps[1].completed = true
+			existingTimestampParams.logo = "test-brand-logo"
+
+			setUpTasksAndRunUpdateTasks((tasks) => {
+				
+				var brandingTaskCompletion = () => {
+					return JSON.parse(mockFileSystemData['tasks.json'])[existingTimestampParams.compilation_id].branding.completed
+				}
+				expect(brandingTaskCompletion()).to.not.equal(true);
+				childSpawnEmitter.emit('exit');
+				setTimeout(() => {
+					expect(brandingTaskCompletion()).to.equal(true);
+					done()
+				}, 20)
 			})
 		})
 

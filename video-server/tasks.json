@@ -1,1 +1,62 @@
-{}
+{
+  "612144323": {
+    "timestamps": [
+      {
+        "episode_id": 36693,
+        "start_time": 10,
+        "duration": 10,
+        "episode_name": "36693.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 36693,
+        "start_time": 20,
+        "duration": 10,
+        "timestamp_id": 230284951,
+        "episode_name": "36693.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 41852,
+        "start_time": 10,
+        "duration": 10,
+        "episode_name": "41852.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 41852,
+        "start_time": 20,
+        "duration": 3,
+        "timestamp_id": 515359639,
+        "episode_name": "41852.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 36693,
+        "start_time": 60,
+        "duration": 10,
+        "episode_name": "36693.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 36693,
+        "start_time": 70,
+        "duration": 10,
+        "episode_name": "36693.mp4",
+        "completed": true
+      },
+      {
+        "episode_id": 36693,
+        "start_time": 80,
+        "duration": 10,
+        "timestamp_id": 709919419,
+        "episode_name": "36693.mp4",
+        "completed": true
+      }
+    ],
+    "branding": {
+      "logo": "premiere-white-logo",
+      "completed": true
+    }
+  }
+}

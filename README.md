@@ -1,4 +1,4 @@
-![SceneStamp](branding/logo-title.png)
+![SceneStamp](branding/-logo-title.png)
 
 ## SceneStamp
 

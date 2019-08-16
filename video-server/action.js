@@ -12,7 +12,8 @@ const {
 	ROOT_DIR,
 	UNLINKED_FOLDER,
 	LINKED_FOLDER,
-	COMPILATION_FOLDER
+	COMPILATION_FOLDER,
+	BRANDING_FOLDER
 } = taskScript.getAllDirectories();
 
 module.exports = {
@@ -150,6 +151,10 @@ module.exports = {
 		baton.addMethod("_getAllCompilationVideos")
 		this._getFilesFromDir(baton, COMPILATION_FOLDER, callback)
 	},
+	_getAllLogos(baton, callback) {
+		baton.addMethod("_getAllLogos")
+		this._getFilesFromDir(baton, BRANDING_FOLDER, callback)
+	},
 
 	_getFilesFromDir(baton, dir, callback) {
 		fs.readdir(dir, (err, files) => {
@@ -207,6 +212,19 @@ module.exports = {
 		})
 	},
 
+	get_allLogos(orig_callback) {
+		var t = this;
+		var baton = t._getBaton("get_allLogos", null, orig_callback);
+
+		this._getAllLogos(baton, function(logos) {
+			baton.callOrigCallback({
+				logo_names: logos.map(function(file) {
+					return file[0]
+				})
+			})
+		})
+	},
+
 	get_CreateCompilation(params, orig_callback) {
 		var t = this;
 		var baton = t._getBaton("get_CreateCompilation", params, orig_callback);
@@ -221,6 +239,7 @@ module.exports = {
 		}
 
 		function validateCreateCompilationParams(linked_videos, compilation_videos, callback) {
+			//check timestamps exist
 			if (!Array.isArray(params.timestamps) || params.timestamps.length <= 0) {
 				baton.setError({
 					compilation_name: params.compilation_name,
@@ -229,7 +248,7 @@ module.exports = {
 				baton.throwError()
 				return
 			}
-
+			//check compilation name exists
 			if (!params.compilation_name || params.compilation_name.trim() == "") {
 				baton.setError({
 					compilation_name: params.compilation_name,
@@ -238,6 +257,7 @@ module.exports = {
 				baton.throwError()
 				return
 			}
+			//validate each timestamp
 			var errorOccur = false;
 			params.timestamps.forEach(function(el) {
 				if (typeof el.episode_id !== 'number' || typeof el.start_time !== 'number' || typeof el.duration !== 'number' || typeof el.timestamp_id !== 'number') {
@@ -269,14 +289,20 @@ module.exports = {
 				baton.throwError()
 				return
 			}
-			callback()
+			//check logo if exists
+			if (params.logo) {
+				console.log('testing logo --- ')
+				t._assertLogoExists(baton, params.logo, callback)
+			} else {
+				callback()
+			}
 		}
 
 		dataLoader(function(linked_videos, compilation_videos) {
 			validateCreateCompilationParams(linked_videos, compilation_videos, function() {
 				t._postCompilation(baton, params, function(updated_params) {
 					updated_params.compilation_id = updated_params.compilation_id.toString()
-					t._updateTaskFile(baton, updated_params.compilation_id, params.timestamps, function() {
+					t._updateTaskFile(baton, updated_params.compilation_id, params.timestamps, params.logo, function() {
 						baton.callOrigCallback({
 							compilation_id: updated_params.compilation_id,
 							compilation_name: updated_params.compilation_name
@@ -301,7 +327,7 @@ module.exports = {
 		})
 	},
 
-	_updateTaskFile(baton, comp_id, timestamps, callback) {
+	_updateTaskFile(baton, comp_id, timestamps, logo, callback) {
 		var t = this;
 
 		function createSubTimestamps(ts, callback) {
@@ -336,6 +362,11 @@ module.exports = {
 			currentTasks[comp_id] = {
 				timestamps: timestamps
 			}
+			if (logo) {
+				currentTasks[comp_id].branding = {
+					logo: logo
+				}
+			}
 			fs.writeFile(TASK_FILE_PATH, JSON.stringify(currentTasks), function(err) {
 				if (err) {
 					baton.setError({
@@ -361,7 +392,7 @@ module.exports = {
 		var t = this
 		var baton = t._getBaton("get_CompilationVideoStatus", null, orig_callback);
 
-		params.compilation_id= params.compilation_id.toString()
+		params.compilation_id = params.compilation_id.toString()
 
 		taskScript.getStatus(params.compilation_id, function(status) {
 			if (status.completed) {
@@ -427,6 +458,23 @@ module.exports = {
 		})
 	},
 
+	_assertLogoExists(baton, logo_name, callback) {
+		this._getAllLogos(baton, function(logo_files) {
+			if (!logo_files.map(file => {
+					return file[0]
+				}).includes(logo_name)) {
+				baton.setError({
+					logo_name: logo_name,
+					public_message: 'Invalid logo : logo name does not exist'
+				})
+				baton.throwError()
+				return
+			}
+			callback()
+		})
+
+	},
+
 	_getEpisodeData(baton, callback) {
 		var t = this;
 		baton.addMethod('_getEpisodeData')
@@ -435,7 +483,7 @@ module.exports = {
 			hostname: cred.TIMESTAMP_SERVER_URL,
 			path: '/getEpisodeData',
 			method: 'GET',
-			port:443
+			port: 443
 		}
 
 		var req = https.request(options, function(res) {
@@ -471,7 +519,7 @@ module.exports = {
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			port:443
+			port: 443
 		}
 		var req = https.request(options, function(res) {
 			res.on('data', function(data) {

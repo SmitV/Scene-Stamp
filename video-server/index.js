@@ -41,7 +41,15 @@ var endpoints = [{
 				res.json(data);
 			});
 		}
-	}, {
+	}, 
+	 {
+		url: 'getLogos',
+		action: function(req, res) {
+			action.get_allLogos(function(data) {
+				res.json(data);
+			});
+		}
+	},{
 		url: 'createCompilation',
 		action: function(req, res) {
 			action.get_CreateCompilation(req.body, function(data) {
