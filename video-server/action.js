@@ -566,6 +566,7 @@ module.exports = {
 				console.log(this.methods[0] + " | " + this.duration)
 				this.orig_callback(data)
 			},
+			params : params,
 			//method sequence
 			methods: [method],
 			addMethod: function(meth) {
