@@ -598,7 +598,7 @@ module.exports = {
 		delete baton.throwError
 		delete baton.callOrigCallback
 		console.log('----------------')
-		console.log(baton)
+		console.log(JSON.stringify(baton))
 		console.log()
 	},
 
