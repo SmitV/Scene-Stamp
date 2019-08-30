@@ -5,6 +5,7 @@ var cred = require('./credentials.js')
 var taskScript = require('./taskScript')
 
 var TASK_FILE_PATH = './tasks.json'
+var DOWNLOAD_TASK_FILE_PATH = './download_tasks.json'
 
 var SUB_TIMESTAMP_DURATION = 10
 
@@ -225,6 +226,74 @@ module.exports = {
 		})
 	},
 
+	get_downloadYoutbeVideo(params, orig_callback) {
+		var t = this;
+		var baton = t._getBaton("get_downloadYoutbeVideo", params, orig_callback);
+
+		function dataLoader(callback) {
+			t._getAllLinkedVideos(baton,function(linked_videos) {
+				t._readDownloadTaskFile(baton, function(download_tasks){
+					callback(linked_videos,download_tasks)
+				})
+			})
+		}
+
+
+		function validateParams(params, linked_videos, download_tasks,callback) {
+			if (params.youtube_link == undefined || params.youtube_link == null) {
+				baton.setError({
+					youtube_link: params.youtube_link,
+					public_message: "Invalid Params: youtube link"
+				})
+				baton.throwError()
+				return
+			}
+			if (params.episode_id == undefined || params.episode_id == null || parseInt(params.episode_id) == NaN) {
+				baton.setError({
+					episode_id: params.episode_id,
+					public_message: "Invalid Params: episode id"
+				})
+				baton.throwError()
+				return
+			}
+			if (linked_videos.map(vid => {
+					return vid[0]
+				}).includes(params.episode_id)) {
+				baton.setError({
+					episode_id: params.episode_id,
+					public_message: "Invalid Params: episode already linked"
+				})
+				baton.throwError()
+				return
+			}
+			if(download_tasks.tasks.map(task =>{return task.episode_id}).includes(params.episode_id)){
+				baton.setError({
+					episode_id: params.episode_id,
+					public_message: "Invalid Params: episode download in process"
+				})
+				baton.throwError()
+				return
+			}
+			if(download_tasks.tasks.map(task =>{return task.youtube_link}).includes(params.youtube_link)){
+				baton.setError({
+					episode_id: params.episode_id,
+					public_message: "Invalid Params: youtube link download in process"
+				})
+				baton.throwError()
+				return
+			}
+			callback()
+		}
+
+		dataLoader(function(linked_videos, download_tasks){
+			validateParams(params, linked_videos, download_tasks,function(){
+				t._updateDownloadTaskFile(baton, params, function(){
+					baton.callOrigCallback(params)
+				})
+			})
+		})
+	},
+
 	get_CreateCompilation(params, orig_callback) {
 		var t = this;
 		var baton = t._getBaton("get_CreateCompilation", params, orig_callback);
@@ -291,7 +360,6 @@ module.exports = {
 			}
 			//check logo if exists
 			if (params.logo) {
-				console.log('testing logo --- ')
 				t._assertLogoExists(baton, params.logo, callback)
 			} else {
 				callback()
@@ -386,6 +454,40 @@ module.exports = {
 			})
 		})
 
+	},
+
+	_readDownloadTaskFile(baton,callback){
+		fs.readFile(DOWNLOAD_TASK_FILE_PATH, function(err, data) {
+			if (err) {
+				baton.setError({
+					err: err.toString(),
+					details: "Cannot read the download task file ",
+					task_file: DOWNLOAD_TASK_FILE_PATH,
+					public_message: 'Internal Error :  Could not put compilation video creation in queue'
+				})
+				baton.throwError()
+				return
+			} else callback((data == '' ? JSON.parse('{\"tasks\":[]}') : JSON.parse(data)))
+		})
+	},
+
+	_updateDownloadTaskFile(baton, params, callback){
+		var t = this
+		t._readDownloadTaskFile(baton, function(download_tasks){
+			download_tasks.tasks.push({youtube_link: params.youtube_link, episode_id : params.episode_id})
+			fs.writeFile(DOWNLOAD_TASK_FILE_PATH, JSON.stringify(download_tasks), function(err) {
+				if (err) {
+					baton.setError({
+						err: err.toString(),
+						details: "Cannot write/update to the download task file ",
+						task_file: DOWNLOAD_TASK_FILE_PATH,
+						public_message: 'Internal Error :  Could not update download task into queue'
+					})
+					baton.throwError()
+					return
+				} else callback()
+			})
+		})
 	},
 
 	get_CompilationVideoStatus(params, orig_callback) {
@@ -566,7 +668,7 @@ module.exports = {
 				console.log(this.methods[0] + " | " + this.duration)
 				this.orig_callback(data)
 			},
-			params : params,
+			params: params,
 			//method sequence
 			methods: [method],
 			addMethod: function(meth) {

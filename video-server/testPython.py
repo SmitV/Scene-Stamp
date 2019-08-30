@@ -1,8 +1,11 @@
 from os import path
 import sys, getopt
 import random
-import json
+import 
+from __future__ import unicode_literals
+import youtube_dl
 from moviepy.editor import *
+
 
 # Tests to ensure python can run on server
 

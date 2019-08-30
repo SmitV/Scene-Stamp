@@ -82,6 +82,14 @@ var endpoints = [{
 				res.json(data);
 			});
 		}
+	},
+	{
+		url: 'downloadYoutubeVideo',
+		action: function(req, res){
+			action.get_downloadYoutbeVideo(req.query, function(data){
+				res.json(data)
+			})
+		}
 	}
 
 ]
@@ -109,6 +117,7 @@ var server = app.listen(process.env.PORT || 8081, function() {
 		action.removeInProgressVideos(function() {
 			loop = setInterval(function() {
 				taskScript.updateTasks()
+				taskScript.updateDownloadTask()
 			}, 2000);
 		})
 

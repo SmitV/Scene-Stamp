@@ -4,21 +4,25 @@ var async = require('async')
 const child_process = require('child_process')
 
 var TASK_FILE_PATH = './tasks.json'
+var DOWNLOAD_TASK_FILE_PATH = './download_tasks.json'
 
-//var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
-var ROOT_DIR = '/home/ubuntu/'
+var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
+//var ROOT_DIR = '/home/ubuntu/'
 
 var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
 var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
 var COMPILATION_FOLDER = ROOT_DIR + 'compilationVideos'
 var BRANDING_FOLDER = ROOT_DIR + 'branding'
 
+var DOWNLOAD_VIDEO_FILE = 'download_yt.py'
 var VIDEO_CUT_FILE = 'video_cut.py'
 var VIDEO_LOGO_FILE = 'video_logo.py'
 var TEST_PYTHON_FILE = 'testPython.py'
 
 var currentTasks = []
 
+//only one video will get downloaded at a time
+var currentDownloadTask = null
 
 /**
 Python Child Processes - How they work
@@ -55,7 +59,7 @@ module.exports = {
 	VIDEO_LOGO_FILE: VIDEO_LOGO_FILE,
 
 
-
+	//current tasks helper
 	_getCurrentTasks() {
 		return currentTasks
 	},
@@ -64,6 +68,17 @@ module.exports = {
 	},
 	_pushTask(compilation_id) {
 		currentTasks.push(compilation_id)
+	},
+
+	//current download task helper
+	_getCurrentDownloadTask() {
+		return currentDownloadTask
+	},
+	_resetCurrentDownloadTask() {
+		currentDownloadTask = null
+	},
+	_setCurrentDownloadTask(episode_id) {
+		currentDownloadTask = episode_id
 	},
 
 	//above methods needed for testing purposes ONLY
@@ -76,6 +91,27 @@ module.exports = {
 			COMPILATION_FOLDER,
 			BRANDING_FOLDER
 		}
+	},
+
+	updateDownloadTask() {
+		var t = this
+
+		function startDownloadTask(youtube_link, episode_id) {
+			console.log('youtube link ' + youtube_link + ' downlaod for : ' + episode_id)
+			console.log()
+			currentDownloadTask = episode_id
+			t._callDownloadVideo(youtube_link, episode_id)
+		}
+
+		this._readDownloadTaskFile(function(download_tasks) {
+			if (currentDownloadTask == null && download_tasks.tasks.length > 0) {
+				var task = download_tasks.tasks.find(task => {
+					return task.error == undefined
+				})
+				if (task !== undefined) startDownloadTask(task.youtube_link, task.episode_id)
+			}
+		})
+
 	},
 
 	updateTasks() {
@@ -138,6 +174,21 @@ module.exports = {
 		})
 	},
 
+	_readDownloadTaskFile(callback) {
+		var t = this;
+		fs.readFile(DOWNLOAD_TASK_FILE_PATH, function(err, data) {
+			if (err) {
+				t._throwError({
+					err: err.toString(),
+					details: "Cannot read the download task file ",
+					task_file: TASK_FILE_PATH,
+					public_message: 'Internal Error :  Could not put video download in queue'
+				})
+				return
+			} else callback((data == '' ? JSON.parse('{\"tasks\":[]}') : JSON.parse(data)))
+		})
+	},
+
 
 	_readTaskFile(callback) {
 		var t = this;
@@ -154,9 +205,24 @@ module.exports = {
 		})
 	},
 
+	_updateDownloadTaskFile(data, callback) {
+		var t = this;
+		fs.writeFile(DOWNLOAD_TASK_FILE_PATH, JSON.stringify(data, undefined, 2), function(err) {
+			if (err) {
+				t._throwError({
+					err: err.toString(),
+					details: "Cannot read the download task file ",
+					task_file: TASK_FILE_PATH,
+					public_message: 'Internal Error :  Could not update the download task file'
+				})
+				return
+			} else callback()
+		})
+	},
+
 	_updateTaskFile(data, callback) {
 		var t = this;
-		fs.writeFile(TASK_FILE_PATH, JSON.stringify(data,undefined, 2), function(err) {
+		fs.writeFile(TASK_FILE_PATH, JSON.stringify(data, undefined, 2), function(err) {
 			if (err) {
 				t._throwError({
 					err: err.toString(),
@@ -179,6 +245,19 @@ module.exports = {
 		})
 	},
 
+	_updateErrorWithinDownloadTasks(episode_id, err) {
+		var t = this;
+		t._readDownloadTaskFile(function(download_tasks) {
+			var index = download_tasks.tasks.findIndex(task => {
+				return task.episode_id == episode_id
+			})
+			download_tasks.tasks[index].error = err
+			t._updateDownloadTaskFile(download_tasks, function() {
+				currentDownloadTask = null
+			})
+		})
+	},
+
 	_updateErrorWithinTasks(comp_id, err) {
 		var t = this;
 		t._readTaskFile(function(tasks) {
@@ -187,6 +266,21 @@ module.exports = {
 				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
 			})
 		})
+	},
+
+	_updateDownloadVideoToComplete(episode_id, callback) {
+		var t = this;
+		t._readDownloadTaskFile(function(download_tasks) {
+			var index = download_tasks.tasks.findIndex(task => {
+				return task.episode_id == episode_id
+			})
+			download_tasks.tasks.splice(index, 1)
+			t._updateDownloadTaskFile(download_tasks, function() {
+				console.log("Finish Downloading Youtbe video " + episode_id)
+				callback()
+			})
+		})
+
 	},
 
 	_updateTimestampToComplete(comp_id, indexOfTimestamp, callback) {
@@ -210,6 +304,30 @@ module.exports = {
 				callback()
 			})
 		})
+
+	},
+
+	_callDownloadVideo(youtube_link, episode_id) {
+		var t = this;
+		var pythonMessages = []
+
+		function onError(err) {
+			t._updateErrorWithinDownloadTasks(episode_id, {
+				messages: pythonMessages,
+				err: err
+			})
+		}
+
+		function onData(data) {
+			pythonMessages.push(data)
+		}
+
+		function onExit() {
+			t._updateDownloadVideoToComplete(episode_id, function() {
+				currentDownloadTask = null
+			})
+		}
+		t._runPythonScript(DOWNLOAD_VIDEO_FILE, [youtube_link, LINKED_FOLDER + '/', episode_id], onData, onError, onExit)
 
 	},
 
@@ -255,9 +373,9 @@ module.exports = {
 		}
 
 		function onExit() {
-				t._updateBrandingToComplete(comp_id, logo_name, function() {
-					currentTasks.splice(currentTasks.indexOf(comp_id), 1)
-				})
+			t._updateBrandingToComplete(comp_id, logo_name, function() {
+				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
+			})
 		}
 
 		t._runPythonScript(VIDEO_LOGO_FILE, [COMPILATION_FOLDER + '/' + compilation_video + '.mp4', BRANDING_FOLDER + '/' + logo_name + '.png'], onData, onError, onExit)
@@ -304,7 +422,7 @@ module.exports = {
 
 			spawnProcess.on('exit', (code, signal) => {
 				spawnProcess.kill();
-				if(!errorOccured) onExit()
+				if (!errorOccured) onExit()
 			});
 		}
 

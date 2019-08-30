@@ -86,7 +86,6 @@ describe('tests', function() {
 			if (params.error) costructedTask[params.compilation_id].error = params.error
 			callback(costructedTask)
 		})
-
 	}
 
 	beforeEach(function() {
@@ -94,8 +93,9 @@ describe('tests', function() {
 		sandbox = sinon.createSandbox();
 
 		taskScript._resetCurrentTasks()
+		taskScript._resetCurrentDownloadTask();
 
-		//repress the console log 
+		//repress the console.log 
 		sandbox.stub(console, 'log').callsFake(() => {})
 
 		fakeBaton = {
@@ -118,6 +118,14 @@ describe('tests', function() {
 				start_time: 10,
 				duration: 20,
 				timestamp_id: 1
+			}]
+		}
+
+		//mock download youtube videos 
+		existingDownloadYoutubeParams = {
+			tasks: [{
+				youtube_link:'youtube_link',
+				episode_id: "101"
 			}]
 		}
 
@@ -148,12 +156,10 @@ describe('tests', function() {
 		nock('https://'+cred.TIMESTAMP_SERVER_URL).post('/newCompilation').reply(201, addUniversalCompilationId(existingTimestampParams))
 
 
-
-
-
 		//mock the file system 
 		mockFileSystemData = {
-			'tasks.json': '{}'
+			'tasks.json': '{}',
+			'download_tasks.json':'{\"tasks\":[]}'
 		}
 
 		mockFileSystemData[UNLINKED_FOLDER] = {
@@ -321,6 +327,49 @@ describe('tests', function() {
 
 	})
 
+	context('download youtube video', function(){
+
+		it('should update download task file with compilation tasks', function(done) {
+			var params = existingDownloadYoutubeParams.tasks[0]
+
+			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
+				expect(JSON.parse(mockFileSystemData['download_tasks.json']).tasks[0]).to.deep.equal(params)
+				sucsessResponse(result)
+				done()
+			})
+		})
+
+		it('should throw for invalid youtube link', function(done) {
+			var params = existingDownloadYoutubeParams.tasks[0]
+			delete params.youtube_link
+
+			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
+				expect(result.error_message).to.equal('Invalid Params: youtube link')
+				done()
+			})
+		})
+
+		it('should throw for invalid episode id', function(done) {
+			var params = existingDownloadYoutubeParams.tasks[0]
+			delete params.episode_id
+
+			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
+				expect(result.error_message).to.equal('Invalid Params: episode id')
+				done()
+			})
+		})
+
+		it('should throw for already linked episode', function(done) {
+			var params = existingDownloadYoutubeParams.tasks[0]
+			params.episode_id = "0"
+
+			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
+				expect(result.error_message).to.equal('Invalid Params: episode already linked')
+				done()
+			})
+		})
+	})
+
 	context('create compilation', function() {
 
 		it('should update task file with compilation tasks', function(done) {
@@ -348,7 +397,7 @@ describe('tests', function() {
 					done()
 				})
 			})
-		})
+		})      
 
 		it('with existing tasks, should update task file, with compilation tasks', function(done) {
 
@@ -551,12 +600,23 @@ describe('tests', function() {
 			setTimeout(callback, 100)
 		}
 
+		async function runUpdateDownloadTasks(callback){
+			taskScript.updateDownloadTask()
+			setTimeout(callback, 100)
+		}
+
 		function setUpExistingTasks(callback) {
 			tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
 				mockFileSystemData['tasks.json'] = JSON.stringify(content)
 				mockFs(mockFileSystemData)
 				callback(content)
 			})
+		}
+
+		function setUpExistingDownloadTasks(callback){
+			mockFileSystemData['download_tasks.json'] = JSON.stringify(existingDownloadYoutubeParams)
+			mockFs(mockFileSystemData)
+			callback(existingDownloadYoutubeParams)
 		}
 
 		function setUpTasksAndRunUpdateTasks(callback) {
@@ -566,8 +626,18 @@ describe('tests', function() {
 				});
 			})
 		}
+
+		function setUpDownloaedTasksAndRun(callback) {
+			setUpExistingDownloadTasks(tasks => {
+				runUpdateDownloadTasks(function() {
+					callback(tasks)
+				});
+			})
+		}
+
 		var videoCutSpy;
 		var videoLogoSpy;
+		var downloadVideoSpy;
 
 		var childSpawnEmitter;
 
@@ -589,8 +659,8 @@ describe('tests', function() {
 			existingTimestampParams.timestamps[0].completed = true
 
 			videoCutSpy = null
-
 			videoLogoSpy = null;
+			downloadVideoSpy = null;
 
 			childSpawnEmitter = new events.EventEmitter();
 
@@ -601,6 +671,7 @@ describe('tests', function() {
 		function setUpSpy() {
 			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
 			videoLogoSpy = sandbox.stub(taskScript, '_callVideoLogo').callsFake(function(){})
+			downloadVideoSpy = sandbox.stub(taskScript, '_callDownloadVideo').callsFake(function(){})
 		}
 
 		it('should run video cut on next incomplete task', function(done) {
@@ -633,8 +704,20 @@ describe('tests', function() {
 			})
 		})
 
+		it('should run download video on next incomplete task', function(done){
+			setUpSpy();
 
-		it('should not run next task, since error exists ', function(done) {
+			setUpDownloaedTasksAndRun((download_tasks) => {
+				var downloadTask = download_tasks.tasks[0]
+				expect(downloadVideoSpy.calledOnce).to.equal(true)
+				expect(taskScript._getCurrentDownloadTask()).to.equal(downloadTask.episode_id)
+				expect(downloadVideoSpy.getCall(0).args).to.deep.equal([downloadTask.youtube_link, downloadTask.episode_id])
+				done()
+			})
+		})
+
+
+		it('should not run next create compilation task, since error exists ', function(done) {
 			setUpSpy();
 			existingTimestampParams.error = 'InTest Error'
 
@@ -645,12 +728,33 @@ describe('tests', function() {
 			})
 		})
 
+		it('should not run next download youtube task, since error exists ', function(done) {
+			setUpSpy();
+			existingDownloadYoutubeParams.tasks[0].error = 'InTest Error'
+
+			setUpDownloaedTasksAndRun(function(download_tasks) {
+				expect(downloadVideoSpy.calledOnce).to.equal(false)
+				expect(taskScript._getCurrentDownloadTask()).to.equal(null)
+				done()
+			})
+		})
+
 		it('should not run video cut on next incomplete task, when compilation creation currently running', function(done) {
 			setUpSpy();
 			taskScript._pushTask(existingTimestampParams.compilation_id.toString())
 
 			setUpTasksAndRunUpdateTasks((tasks) => {
 				expect(videoCutSpy.calledOnce).to.equal(false)
+				done()
+			});
+		})
+
+		it('should not run download video on next incomplete task, when download video currently running', function(done){
+			setUpSpy();
+			taskScript._setCurrentDownloadTask(existingDownloadYoutubeParams.tasks[0].episode_id)
+
+			setUpDownloaedTasksAndRun((download_tasks) => {
+				expect(downloadVideoSpy.calledOnce).to.equal(false)
 				done()
 			});
 		})
@@ -705,6 +809,23 @@ describe('tests', function() {
 			})
 		})
 
+		it('should update the download task file after download video is finished', function(done) {
+			setUpSpawnEmitter();
+
+			setUpDownloaedTasksAndRun((tasks) => {
+				
+				var downloadTasks= () => {
+					return JSON.parse(mockFileSystemData['download_tasks.json']).tasks
+				}
+				expect(downloadTasks().length).to.equal(1);
+				childSpawnEmitter.emit('exit');
+				setTimeout(() => {
+					expect(downloadTasks().length).to.equal(0);
+					done()
+				}, 20)
+			})
+		})
+
 		it('should update the task file with messages and error after video cut throws error', function(done) {
 			setUpSpawnEmitter();
 			setUpTasksAndRunUpdateTasks((tasks) => {
@@ -717,6 +838,24 @@ describe('tests', function() {
 				setTimeout(() => {
 					expect(currentTaskError().messages).to.contain('InTest Data')
 					expect(currentTaskError().err).to.contain('InTest Error');
+					done()
+				}, 20)
+
+			})
+		})
+
+		it('should update the download task file with messages and error after download youtube throws error', function(done) {
+			setUpSpawnEmitter();
+			setUpDownloaedTasksAndRun((tasks) => {
+				var currentDownloadTask = () => {
+					return JSON.parse(mockFileSystemData['download_tasks.json']).tasks[0].error
+				}
+				expect(currentDownloadTask()).to.equal(undefined);
+				emit('data', 'InTest Data')
+				emit('error', 'InTest Error')
+				setTimeout(() => {
+					expect(currentDownloadTask().messages).to.contain('InTest Data')
+					expect(currentDownloadTask().err).to.contain('InTest Error');
 					done()
 				}, 20)
 
