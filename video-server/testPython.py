@@ -1,7 +1,7 @@
+from __future__ import unicode_literals
 from os import path
 import sys, getopt
 import random
-from __future__ import unicode_literals
 import youtube_dl
 from moviepy.editor import *
 
