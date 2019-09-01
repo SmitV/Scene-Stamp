@@ -507,7 +507,7 @@ module.exports = {
 		taskScript.getStatus(params.compilation_id, function(status) {
 			if (status.completed) {
 				t._assertCompilationIdExists(baton, params.compilation_id, function() {
-					baton.callOrigCallback(status)
+					baton.json(status)
 				})
 				return
 			}

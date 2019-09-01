@@ -273,6 +273,10 @@ describe('tests', function() {
 		nock.cleanAll()
 	})
 
+	it('check root', function(){
+		expect(ROOT_DIR).to.equal('/home/ubuntu/')
+	})
+
 	context('file sytem api', function() {
 		it('should get all unlinked videos', done => {
 			sendRequest('getUnlinkedVideos', {}).end((err, res, body) => {
