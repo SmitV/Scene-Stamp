@@ -3,6 +3,8 @@ const expect = require('chai').expect;
 var sinon = require('sinon')
 var events = require('events')
 var child_process = require('child_process')
+var chai = require('chai')
+var chaiHttp = require('chai-http');
 
 var mockFs = require('mock-fs')
 var fs = require('fs')
@@ -12,10 +14,42 @@ var action = require('../action')
 var taskScript = require('../taskScript')
 var cred = require('../credentials.js')
 
+sinon.stub(taskScript, 'initialTests').callsFake(callback => {
+	callback()
+})
 
+//bypasses remove all of ip files, and also doesn't call the update tasks
+sinon.stub(action, 'removeInProgressVideos').callsFake(() => {})
+
+var server = require('../index').server
+
+chai.use(chaiHttp);
 
 describe('tests', function() {
 
+	function assertErrorMessage(res, msg, custom) {
+		expect((custom == true ? res.endStatus : res.status)).to.equal(500)
+		expect((custom == true ? res.data : res.body)).to.have.property('error_message')
+		expect((custom == true ? res.data : res.body).error_message).to.equal(msg)
+	}
+
+
+	function assertSuccess(res, post) {
+		expect(res.status).to.equal((post ? 201 : 200))
+	}
+
+
+	function sendRequest(path, params, post) {
+		if (post) {
+			return chai.request(server).post('/' + path)
+				.set('content-type', 'application/json')
+				.send(params)
+		} else {
+			return chai.request(server).get('/' + path + '?' + Object.keys(params).map(attr => {
+				return attr + '=' + params[attr]
+			}).join('&')).send()
+		}
+	}
 
 
 	var sandbox;
@@ -78,9 +112,9 @@ describe('tests', function() {
 			costructedTask[params.compilation_id] = {
 				timestamps: newTasks
 			}
-			if(params.logo){
+			if (params.logo) {
 				costructedTask[params.compilation_id].branding = {
-					logo : params.logo
+					logo: params.logo
 				}
 			}
 			if (params.error) costructedTask[params.compilation_id].error = params.error
@@ -92,11 +126,34 @@ describe('tests', function() {
 
 		sandbox = sinon.createSandbox();
 
+
 		taskScript._resetCurrentTasks()
 		taskScript._resetCurrentDownloadTask();
 
 		//repress the console.log 
 		sandbox.stub(console, 'log').callsFake(() => {})
+
+		fakeRes = {
+			data: null,
+			endStatus: null,
+			status: function(endStatus) {
+				this.endStatus = endStatus
+				return this
+			},
+			json: function(data) {
+				this.data = data;
+			}
+		}
+
+		//req body to test the auth 
+		//can't use the chai http , since we are not makking a endpoint call and simple calling a function 
+		fakeReq = {
+			headers: {},
+			body: {},
+			get(attr) {
+				return this.headers[attr]
+			}
+		}
 
 		fakeBaton = {
 			methods: [],
@@ -124,10 +181,12 @@ describe('tests', function() {
 		//mock download youtube videos 
 		existingDownloadYoutubeParams = {
 			tasks: [{
-				youtube_link:'youtube_link',
+				youtube_link: 'youtube_link',
 				episode_id: "101"
 			}]
 		}
+
+		const encodings = require('iconv-lite/encodings');
 
 		//mock timestamp server calls
 
@@ -144,22 +203,22 @@ describe('tests', function() {
 
 		universalCompilationId = 1057
 
-		function addUniversalCompilationId(){
+		function addUniversalCompilationId() {
 			var data = JSON.parse(JSON.stringify(existingTimestampParams))
 			data.compilation_id = universalCompilationId
 			return data
 		}
 
 		//episode data
-		nock('https://'+cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(200, mockEpisodeData)
+		nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(200, mockEpisodeData)
 
-		nock('https://'+cred.TIMESTAMP_SERVER_URL).post('/newCompilation').reply(201, addUniversalCompilationId(existingTimestampParams))
+		nock('https://' + cred.TIMESTAMP_SERVER_URL).post('/newCompilation').reply(201, addUniversalCompilationId(existingTimestampParams))
 
 
 		//mock the file system 
 		mockFileSystemData = {
 			'tasks.json': '{}',
-			'download_tasks.json':'{\"tasks\":[]}'
+			'download_tasks.json': '{\"tasks\":[]}'
 		}
 
 		mockFileSystemData[UNLINKED_FOLDER] = {
@@ -214,127 +273,155 @@ describe('tests', function() {
 		nock.cleanAll()
 	})
 
-	it('should mock file system', function() {
-		action._getAllUnlinkedVideos(fakeBaton, (unlinked_videos) => {
-			var files = []
-			Object.keys(mockFileSystemData[UNLINKED_FOLDER]).forEach(function(key) {
-				files.push(key.split('.'))
-			});
-			expect(unlinked_videos).to.deep.equal(files)
+	context('file sytem api', function() {
+		it('should get all unlinked videos', done => {
+			sendRequest('getUnlinkedVideos', {}).end((err, res, body) => {
+				assertSuccess(res)
+				var files = []
+				Object.keys(mockFileSystemData[UNLINKED_FOLDER]).forEach(function(key) {
+					files.push(key.split('.')[0])
+				});
+				expect(res.body.videos).to.deep.equal(files)
+				done()
+			})
+		})
+		it('should get all linked videos', done => {
+			sendRequest('getLinkedVideos', {}).end((err, res, body) => {
+				assertSuccess(res)
+				var files = []
+				Object.keys(mockFileSystemData[LINKED_FOLDER]).forEach(function(key) {
+					files.push(key.split('.')[0])
+				});
+				expect(res.body.videos).to.deep.equal(files)
+				done()
+			})
 		})
 
-		action._getAllLinkedVideos(fakeBaton, (linked_videos) => {
-			var files = []
-			Object.keys(mockFileSystemData[LINKED_FOLDER]).forEach(function(key) {
-				files.push(key.split('.'))
-			});
-			expect(linked_videos).to.deep.equal(files)
+		it('should get all compilation videos', done => {
+			sendRequest('getCompilationVideos', {}).end((err, res, body) => {
+				assertSuccess(res)
+				var files = []
+				Object.keys(mockFileSystemData[COMPILATION_FOLDER]).forEach(function(key) {
+					files.push(key.split('.')[0])
+				});
+				expect(res.body.videos).to.deep.equal(files)
+				done()
+			})
 		})
 
-		action._getAllCompilationVideos(fakeBaton, (compilation_videos) => {
-			var files = []
-			Object.keys(mockFileSystemData[COMPILATION_FOLDER]).forEach(function(key) {
-				files.push(key.split('.'))
-			});
-			expect(compilation_videos).to.deep.equal(files)
+		it('should get all branding', done => {
+			sendRequest('getLogos', {}).end((err, res, body) => {
+				assertSuccess(res)
+				var files = []
+				Object.keys(mockFileSystemData[BRANDING_FOLDER]).forEach(function(key) {
+					files.push(key.split('.')[0])
+				});
+				expect(res.body.logo_names).to.deep.equal(files)
+				done()
+			})
 		})
 	})
 
-	context('linking episode ', function() {
+	context('linking episodes', function() {
 
-		it('should link unlinked video to episode', function() {
+		it('should link unlinked video to episode', function(done) {
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
 				unlinked_video: unlinkedVideoName.split('.')[0],
 				episode_id: mockEpisodeData[2].episode_id
 			}
 			var origFileContent = mockFileSystemData[UNLINKED_FOLDER][Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]]
-			action.get_linkVideoToEpisode(params, function(result) {
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertSuccess(res)
 				action._getAllUnlinkedVideos(fakeBaton, (linked_videos) => {
 					expect(mockFileSystemData[UNLINKED_FOLDER][params.unlinked_video]).to.equal(undefined);
 				})
-				expect(result.episode_id_linked).to.equal(params.episode_id);
+				expect(res.body.episode_id_linked).to.equal(params.episode_id.toString());
 				expect(mockFileSystemData[LINKED_FOLDER][params.episode_id + '.mp4']).to.equal(origFileContent)
-				sucsessResponse(result)
+				done()
 			})
 		})
 
-		it('should throw for error in getEpisodeData call', function() {
+		it('should throw for error in getEpisodeData call', function(done) {
 			var error = {
 				id: 101,
-				error: 'InTest Timestamp Error'
+				error_message: 'InTest Timestamp Error'
 			};
 			nock.cleanAll()
-			nock('https://'+cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
 				unlinked_video: unlinkedVideoName.split('.')[0],
 				episode_id: mockEpisodeData[2].episode_id
 			}
-			action.get_linkVideoToEpisode(params, function(result) {
-				expect(result).to.deep.equal(error)
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertErrorMessage(res, error.error_message)
+				expect(res.body.id).to.equal(error.id)
+				done()
 			})
-
 		})
 
-		it('should throw for invalid unlinked video', function() {
+		it('should throw for invalid unlinked video', function(done) {
 			var unlinkedVideoName = 'Random Unlinked Video'
 			var params = {
 				unlinked_video: unlinkedVideoName,
 				episode_id: mockEpisodeData[2].episode_id
 			}
-			action.get_linkVideoToEpisode(params, function(result) {
-				expect(result.error_message).to.equal('Invalid Params : unlinked video does not exist')
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params : unlinked video does not exist')
+				done()
 			})
-
 		})
 
-		it('should throw for invalid episode id', function() {
+		it('should throw for invalid episode id', function(done) {
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
 				unlinked_video: unlinkedVideoName.split('.')[0],
 				episode_id: 101
 			}
-			action.get_linkVideoToEpisode(params, function(result) {
-				expect(result.error_message).to.equal('Invalid Params Episode Id: invalid id')
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params Episode Id: invalid id')
+				done()
 			})
 
 		})
 
-		it('should throw for already linked episode id', function() {
+		it('should throw for already linked episode id', function(done) {
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
 				unlinked_video: unlinkedVideoName.split('.')[0],
 				episode_id: mockEpisodeData[0].episode_id
 			}
-			action.get_linkVideoToEpisode(params, function(result) {
-				expect(result.error_message).to.equal('Invalid Params Episode Id: already linked to video')
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params Episode Id: already linked to video')
+				done()
 			})
 
 		})
 
-		it('should throw for unlinked video that is not in mp4 format', function() {
+		it('should throw for unlinked video that is not in mp4 format', function(done) {
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[2]
 			var params = {
 				unlinked_video: unlinkedVideoName.split('.')[0],
 				episode_id: mockEpisodeData[2].episode_id
 			}
-			action.get_linkVideoToEpisode(params, function(result) {
-				expect(result.error_message).to.equal('Invalid Params Unlinked Video: file must be in mp4 format')
+			sendRequest('linkToEpisode', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params Unlinked Video: file must be in mp4 format')
+				done()
 			})
 
 		})
-
 	})
 
-	context('download youtube video', function(){
+	context('download youtube video', function() {
 
 		it('should update download task file with compilation tasks', function(done) {
 			var params = existingDownloadYoutubeParams.tasks[0]
 
-			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
+			sendRequest('downloadYoutubeVideo', params).end((err, res, body) => {
+				assertSuccess(res)
+				expect(res.body).to.deep.equal(params)
 				expect(JSON.parse(mockFileSystemData['download_tasks.json']).tasks[0]).to.deep.equal(params)
-				sucsessResponse(result)
 				done()
 			})
 		})
@@ -343,8 +430,8 @@ describe('tests', function() {
 			var params = existingDownloadYoutubeParams.tasks[0]
 			delete params.youtube_link
 
-			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: youtube link')
+			sendRequest('downloadYoutubeVideo', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: youtube link')
 				done()
 			})
 		})
@@ -353,8 +440,8 @@ describe('tests', function() {
 			var params = existingDownloadYoutubeParams.tasks[0]
 			delete params.episode_id
 
-			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: episode id')
+			sendRequest('downloadYoutubeVideo', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: episode id')
 				done()
 			})
 		})
@@ -363,23 +450,25 @@ describe('tests', function() {
 			var params = existingDownloadYoutubeParams.tasks[0]
 			params.episode_id = "0"
 
-			action.get_downloadYoutbeVideo(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: episode already linked')
+			sendRequest('downloadYoutubeVideo', params).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: episode already linked')
 				done()
 			})
 		})
+
 	})
 
-	context('create compilation', function() {
+	context('create compilations', function() {
 
 		it('should update task file with compilation tasks', function(done) {
 			var params = existingTimestampParams
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
+				assertSuccess(res)
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
+					sucsessResponse(res)
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
-					sucsessResponse(result)
 					done()
 				})
 			})
@@ -389,15 +478,15 @@ describe('tests', function() {
 			var params = existingTimestampParams
 			params.logo = "test-brand-logo"
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
-					sucsessResponse(result)
+					sucsessResponse(res)
 					done()
 				})
 			})
-		})      
+		})
 
 		it('with existing tasks, should update task file, with compilation tasks', function(done) {
 
@@ -412,12 +501,12 @@ describe('tests', function() {
 			}
 
 			setUpExistingTasks(function(existingTaskContent) {
-				action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
+				sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
 					tasksForCompilation(params, (content) => {
 						var taskFileContent = JSON.parse(mockFileSystemData['tasks.json'])
 						expect(taskFileContent[existingTimestampParams.compilation_id]).to.deep.equal(existingTaskContent[existingTimestampParams.compilation_id]);
 						expect(taskFileContent[content.compilation_id]).to.deep.equal(content[content.compilation_id]);
-						sucsessResponse(result)
+						sucsessResponse(res)
 						done()
 					})
 				})
@@ -428,8 +517,8 @@ describe('tests', function() {
 			var params = existingTimestampParams
 			delete params.compilation_name
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: compilation name')
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: compilation name')
 				done()
 			})
 		})
@@ -439,8 +528,8 @@ describe('tests', function() {
 			params.timestamps = []
 
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: timestamps')
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: timestamps')
 				done()
 			})
 		})
@@ -449,8 +538,8 @@ describe('tests', function() {
 			var params = existingTimestampParams
 			params.timestamps[0].episode_id = 101 //episode id not in linked folder
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid Params: episode id not present on server')
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid Params: episode id not present on server')
 				done()
 			})
 		})
@@ -459,12 +548,11 @@ describe('tests', function() {
 			var params = existingTimestampParams
 			params.logo = "invalid-logo"
 
-			action.get_CreateCompilation(JSON.parse(JSON.stringify(params)), function(result) {
-				expect(result.error_message).to.equal('Invalid logo : logo name does not exist')
+			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid logo : logo name does not exist')
 				done()
 			})
 		})
-
 	})
 
 	//compilation video status 
@@ -485,12 +573,12 @@ describe('tests', function() {
 			}
 
 			setUpExistingTasks(function() {
-				action.get_CompilationVideoStatus({
+				sendRequest('getCompilationStatus', {
 					compilation_id: existingTimestampParams.compilation_id
-				}, function(result) {
-					sucsessResponse(result)
-					expect(result.completed).to.equal(false)
-					expect(result.percentage).to.equal(0.5);
+				}).end((err, res, body) => {
+					assertSuccess(res)
+					expect(res.body.completed).to.equal(false)
+					expect(res.body.percentage).to.equal(0.5);
 					done()
 				})
 			})
@@ -512,13 +600,13 @@ describe('tests', function() {
 			}
 
 			setUpExistingTasks(function() {
-				action.get_CompilationVideoStatus({
+				sendRequest('getCompilationStatus', {
 					compilation_id: existingTimestampParams.compilation_id
-				}, function(result) {
-					sucsessResponse(result)
+				}).end((err, res, body) => {
+					assertSuccess(res)
 					// even if the percentage is 100, we only update completed in the 'updateTask' taskScript function
-					expect(result.completed).to.equal(false)
-					expect(result.percentage).to.equal(1);
+					expect(res.body.completed).to.equal(false)
+					expect(res.body.percentage).to.equal(1);
 					done()
 				})
 			})
@@ -540,12 +628,12 @@ describe('tests', function() {
 			}
 
 			setUpExistingTasks(function() {
-				action.get_CompilationVideoStatus({
+				sendRequest('getCompilationStatus', {
 					compilation_id: existingTimestampParams.compilation_id
-				}, function(result) {
-					sucsessResponse(result)
-					expect(result.completed).to.equal(false)
-					expect(result.percentage).to.equal(4/5);
+				}).end((err, res, body) => {
+					assertSuccess(res)
+					expect(res.body.completed).to.equal(false)
+					expect(res.body.percentage).to.equal(4 / 5);
 					done()
 				})
 			})
@@ -568,12 +656,12 @@ describe('tests', function() {
 			}
 
 			setUpExistingTasks(function() {
-				action.get_CompilationVideoStatus({
+				sendRequest('getCompilationStatus', {
 					compilation_id: existingTimestampParams.compilation_id
-				}, function(result) {
-					sucsessResponse(result)
-					expect(result.completed).to.equal(false)
-					expect(result.percentage).to.equal(1);
+				}).end((err, res, body) => {
+					assertSuccess(res)
+					expect(res.body.completed).to.equal(false)
+					expect(res.body.percentage).to.equal(1);
 					done()
 				})
 			})
@@ -582,10 +670,10 @@ describe('tests', function() {
 		it('should throw invalid param; invalid compilation id', function(done) {
 
 			var compilation_id = 111 //wrong compilation id
-			action.get_CompilationVideoStatus({
-				compilation_id : compilation_id
-			}, function(result) {
-				expect(result.error_message).to.equal('Invalid compilation id: compilation does not exist')
+			sendRequest('getCompilationStatus', {
+				compilation_id: existingTimestampParams.compilation_id
+			}).end((err, res, body) => {
+				assertErrorMessage(res, 'Invalid compilation id: compilation does not exist')
 				done()
 			})
 
@@ -600,7 +688,7 @@ describe('tests', function() {
 			setTimeout(callback, 100)
 		}
 
-		async function runUpdateDownloadTasks(callback){
+		async function runUpdateDownloadTasks(callback) {
 			taskScript.updateDownloadTask()
 			setTimeout(callback, 100)
 		}
@@ -613,7 +701,7 @@ describe('tests', function() {
 			})
 		}
 
-		function setUpExistingDownloadTasks(callback){
+		function setUpExistingDownloadTasks(callback) {
 			mockFileSystemData['download_tasks.json'] = JSON.stringify(existingDownloadYoutubeParams)
 			mockFs(mockFileSystemData)
 			callback(existingDownloadYoutubeParams)
@@ -670,8 +758,8 @@ describe('tests', function() {
 
 		function setUpSpy() {
 			videoCutSpy = sandbox.stub(taskScript, '_callVideoCut').callsFake(function() {})
-			videoLogoSpy = sandbox.stub(taskScript, '_callVideoLogo').callsFake(function(){})
-			downloadVideoSpy = sandbox.stub(taskScript, '_callDownloadVideo').callsFake(function(){})
+			videoLogoSpy = sandbox.stub(taskScript, '_callVideoLogo').callsFake(function() {})
+			downloadVideoSpy = sandbox.stub(taskScript, '_callDownloadVideo').callsFake(function() {})
 		}
 
 		it('should run video cut on next incomplete task', function(done) {
@@ -699,12 +787,12 @@ describe('tests', function() {
 				})
 				expect(videoLogoSpy.calledOnce).to.equal(true)
 				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
-				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(),"test-brand-logo"])
+				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(), "test-brand-logo"])
 				done()
 			})
 		})
 
-		it('should run download video on next incomplete task', function(done){
+		it('should run download video on next incomplete task', function(done) {
 			setUpSpy();
 
 			setUpDownloaedTasksAndRun((download_tasks) => {
@@ -749,7 +837,7 @@ describe('tests', function() {
 			});
 		})
 
-		it('should not run download video on next incomplete task, when download video currently running', function(done){
+		it('should not run download video on next incomplete task, when download video currently running', function(done) {
 			setUpSpy();
 			taskScript._setCurrentDownloadTask(existingDownloadYoutubeParams.tasks[0].episode_id)
 
@@ -796,7 +884,7 @@ describe('tests', function() {
 			existingTimestampParams.logo = "test-brand-logo"
 
 			setUpTasksAndRunUpdateTasks((tasks) => {
-				
+
 				var brandingTaskCompletion = () => {
 					return JSON.parse(mockFileSystemData['tasks.json'])[existingTimestampParams.compilation_id].branding.completed
 				}
@@ -813,8 +901,8 @@ describe('tests', function() {
 			setUpSpawnEmitter();
 
 			setUpDownloaedTasksAndRun((tasks) => {
-				
-				var downloadTasks= () => {
+
+				var downloadTasks = () => {
 					return JSON.parse(mockFileSystemData['download_tasks.json']).tasks
 				}
 				expect(downloadTasks().length).to.equal(1);

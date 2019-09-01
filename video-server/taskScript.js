@@ -6,8 +6,8 @@ const child_process = require('child_process')
 var TASK_FILE_PATH = './tasks.json'
 var DOWNLOAD_TASK_FILE_PATH = './download_tasks.json'
 
-//var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
-var ROOT_DIR = '/home/ubuntu/'
+var ROOT_DIR = '/Users/kunal/Desktop/SSV/'
+//var ROOT_DIR = '/home/ubuntu/'
 
 var UNLINKED_FOLDER = ROOT_DIR + 'unlinkedVideos'
 var LINKED_FOLDER = ROOT_DIR + 'episodeVideos'
@@ -81,6 +81,10 @@ module.exports = {
 		currentDownloadTask = episode_id
 	},
 
+	setRoot(root){
+		ROOT_DIR = root
+	},
+
 	//above methods needed for testing purposes ONLY
 
 	getAllDirectories() {
@@ -89,7 +93,9 @@ module.exports = {
 			UNLINKED_FOLDER,
 			LINKED_FOLDER,
 			COMPILATION_FOLDER,
-			BRANDING_FOLDER
+			BRANDING_FOLDER,
+			TASK_FILE_PATH,
+			DOWNLOAD_TASK_FILE_PATH
 		}
 	},
 
@@ -478,6 +484,7 @@ module.exports = {
 
 		this.callTestPythonScript(error => {
 			if (!error) {
+				console.log('check idr')
 				this.checkDirectories(error => {
 					callback(error)
 				})

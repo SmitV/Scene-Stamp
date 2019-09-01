@@ -10,6 +10,63 @@ app.use(bodyParser.urlencoded({
 	extended: false
 }));
 
+
+var endpoints = [{
+		//will rename episode to new  
+		url: 'linkToEpisode',
+		action: function(req, res) {
+			action.get_linkVideoToEpisode(req.query, res);
+		}
+	}, {
+		url: 'getUnlinkedVideos',
+		action: function(req, res) {
+			action.get_allUnlinkedVideos(res);
+		}
+	}, {
+		url: 'getLinkedVideos',
+		action: function(req, res) {
+			action.get_allLinkedVides(res);
+		}
+	}, 
+	 {
+		url: 'getLogos',
+		action: function(req, res) {
+			action.get_allLogos(res);
+		}
+	},{
+		url: 'createCompilation',
+		action: function(req, res) {
+			action.get_CreateCompilation(req.body, res);
+		},
+		post: true
+	}, {
+		//gets al list of all of the compilation video names 
+		url: 'getCompilationVideos',
+		action: function(req, res) {
+			action.get_allCompilationVideos(res);
+		}
+	}, {
+		//gets status of a compilation video 
+		url: 'getCompilationStatus',
+		action: function(req, res) {
+		action.get_CompilationVideoStatus(req.query, res);
+		}
+	}, {
+		//will call res.download to the compilation video file 
+		url: 'downloadCompilation',
+		action: function(req, res) {
+			action.get_downloadCompilation(req.query, res);
+		}
+	},
+	{
+		url: 'downloadYoutubeVideo',
+		action: function(req, res){
+			action.get_downloadYoutbeVideo(req.query, res)
+		}
+	}
+
+]
+
 app.all('*', function(req, res, next) {
 	var origin = req.get('origin');
 	res.header('Access-Control-Allow-Origin', origin);
@@ -17,82 +74,6 @@ app.all('*', function(req, res, next) {
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
 	next();
 });
-
-
-var endpoints = [{
-		//will rename episode to new  
-		url: 'linkToEpisode',
-		action: function(req, res) {
-			action.get_linkVideoToEpisode(req.query, function(data) {
-				res.json(data);
-			});
-		}
-	}, {
-		url: 'getUnlinkedVideos',
-		action: function(req, res) {
-			action.get_allUnlinkedVideos(function(data) {
-				res.json(data);
-			});
-		}
-	}, {
-		url: 'getLinkedVideos',
-		action: function(req, res) {
-			action.get_allLinkedVides(function(data) {
-				res.json(data);
-			});
-		}
-	}, 
-	 {
-		url: 'getLogos',
-		action: function(req, res) {
-			action.get_allLogos(function(data) {
-				res.json(data);
-			});
-		}
-	},{
-		url: 'createCompilation',
-		action: function(req, res) {
-			action.get_CreateCompilation(req.body, function(data) {
-				res.json(data);
-			});
-		},
-		post: true
-	}, {
-		//gets al list of all of the compilation video names 
-		url: 'getCompilationVideos',
-		action: function(req, res) {
-			action.get_allCompilationVideos(function(data) {
-				res.json(data);
-			});
-		}
-	}, {
-		//gets status of a compilation video 
-		url: 'getCompilationStatus',
-		action: function(req, res) {
-			action.get_CompilationVideoStatus(req.query, function(data) {
-				res.json(data);
-			});
-		}
-	}, {
-		//will call res.download to the compilation video file 
-		url: 'downloadCompilation',
-		action: function(req, res) {
-			action.get_downloadCompilation(req.query, res, function(data) {
-				//this is to handle error responses, pass in res to function to call download
-				res.json(data);
-			});
-		}
-	},
-	{
-		url: 'downloadYoutubeVideo',
-		action: function(req, res){
-			action.get_downloadYoutbeVideo(req.query, function(data){
-				res.json(data)
-			})
-		}
-	}
-
-]
 
 
 endpoints.forEach(function(endpoint) {
@@ -107,7 +88,6 @@ endpoints.forEach(function(endpoint) {
 	});
 
 })
-
 
 var server = app.listen(process.env.PORT || 8081, function() {
 	console.log("Scene Stamp Video Server Running @ port ", this.address().port)
@@ -132,3 +112,7 @@ var server = app.listen(process.env.PORT || 8081, function() {
 		taskLoop();
 	})
 })
+
+module.exports = {
+	server:server
+}

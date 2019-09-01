@@ -4,9 +4,6 @@ var fs = require('fs')
 var cred = require('./credentials.js')
 var taskScript = require('./taskScript')
 
-var TASK_FILE_PATH = './tasks.json'
-var DOWNLOAD_TASK_FILE_PATH = './download_tasks.json'
-
 var SUB_TIMESTAMP_DURATION = 10
 
 const {
@@ -14,14 +11,16 @@ const {
 	UNLINKED_FOLDER,
 	LINKED_FOLDER,
 	COMPILATION_FOLDER,
-	BRANDING_FOLDER
+	BRANDING_FOLDER,
+	TASK_FILE_PATH,
+	DOWNLOAD_TASK_FILE_PATH
 } = taskScript.getAllDirectories();
 
 module.exports = {
 
-	get_linkVideoToEpisode(params, orig_callback) {
+	get_linkVideoToEpisode(params, res) {
 		var t = this;
-		var baton = t._getBaton("get_linkVideoToEpisode", params, orig_callback);
+		var baton = t._getBaton("get_linkVideoToEpisode", params, res);
 
 		function dataLoader(callback) {
 			t._getAllUnlinkedVideos(baton, function(unlinked_videos) {
@@ -42,7 +41,7 @@ module.exports = {
 					unlinked_video: params.unlinked_video,
 					public_message: 'Invalid Params : unlinked video does not exist'
 				})
-				baton.throwError();
+				t._generateError(baton)
 				return
 			} else {
 				localFile = unlinked_vids.filter(function(file) {
@@ -56,7 +55,7 @@ module.exports = {
 					episode_id: params.episode_id,
 					public_message: 'Invalid Params Episode Id: invalid id'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			if (linked_videos.map(function(file) {
@@ -66,7 +65,7 @@ module.exports = {
 					episode_id: params.episode_id,
 					public_message: 'Invalid Params Episode Id: already linked to video'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 
@@ -76,7 +75,7 @@ module.exports = {
 					unlinked_video: localFile.join('.'),
 					public_message: 'Invalid Params Unlinked Video: file must be in mp4 format'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			callback(localFile)
@@ -90,16 +89,18 @@ module.exports = {
 					baton.setError({
 						oldFileName: oldFileName,
 						newFileName: newFileName,
+						error:err,
 						public_message: 'Internal Error Has Occured'
 					})
-					baton.throwError()
+					t._generateError(baton)
+					return
 				}
 				callback(newFileName)
 			});
 		}
 
 		function submit(newFile) {
-			baton.callOrigCallback({
+			baton.json({
 				episode_id_linked: params.episode_id
 			})
 		}
@@ -164,7 +165,7 @@ module.exports = {
 					error: err,
 					public_message: "An Internal Error has occured"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			if (!files || files == undefined) callback([])
@@ -174,12 +175,12 @@ module.exports = {
 		})
 	},
 
-	get_allUnlinkedVideos(orig_callback) {
+	get_allUnlinkedVideos(res) {
 		var t = this;
-		var baton = t._getBaton("get_allUnlinkedVideos", null, orig_callback);
+		var baton = t._getBaton("get_allUnlinkedVideos", null, res);
 
 		this._getAllUnlinkedVideos(baton, function(unlinked_videos) {
-			baton.callOrigCallback({
+			baton.json({
 				videos: unlinked_videos.map(function(file) {
 					return file[0]
 				})
@@ -187,12 +188,12 @@ module.exports = {
 		})
 	},
 
-	get_allLinkedVides(orig_callback) {
+	get_allLinkedVides(res) {
 		var t = this;
-		var baton = t._getBaton("get_allLinkedVides", null, orig_callback);
+		var baton = t._getBaton("get_allLinkedVides", null, res);
 
 		this._getAllLinkedVideos(baton, function(linked_videos) {
-			baton.callOrigCallback({
+			baton.json({
 				videos: linked_videos.map(function(file) {
 					return file[0]
 				})
@@ -200,12 +201,12 @@ module.exports = {
 		})
 	},
 
-	get_allCompilationVideos(orig_callback) {
+	get_allCompilationVideos(res) {
 		var t = this;
-		var baton = t._getBaton("get_allCompilationVideos", null, orig_callback);
+		var baton = t._getBaton("get_allCompilationVideos", null, res);
 
 		this._getAllCompilationVideos(baton, function(comp_videos) {
-			baton.callOrigCallback({
+			baton.json({
 				videos: comp_videos.map(function(file) {
 					return file[0]
 				})
@@ -213,12 +214,12 @@ module.exports = {
 		})
 	},
 
-	get_allLogos(orig_callback) {
+	get_allLogos(res) {
 		var t = this;
-		var baton = t._getBaton("get_allLogos", null, orig_callback);
+		var baton = t._getBaton("get_allLogos", null, res);
 
 		this._getAllLogos(baton, function(logos) {
-			baton.callOrigCallback({
+			baton.json({
 				logo_names: logos.map(function(file) {
 					return file[0]
 				})
@@ -226,26 +227,26 @@ module.exports = {
 		})
 	},
 
-	get_downloadYoutbeVideo(params, orig_callback) {
+	get_downloadYoutbeVideo(params, res) {
 		var t = this;
-		var baton = t._getBaton("get_downloadYoutbeVideo", params, orig_callback);
+		var baton = t._getBaton("get_downloadYoutbeVideo", params, res);
 
 		function dataLoader(callback) {
-			t._getAllLinkedVideos(baton,function(linked_videos) {
-				t._readDownloadTaskFile(baton, function(download_tasks){
-					callback(linked_videos,download_tasks)
+			t._getAllLinkedVideos(baton, function(linked_videos) {
+				t._readDownloadTaskFile(baton, function(download_tasks) {
+					callback(linked_videos, download_tasks)
 				})
 			})
 		}
 
 
-		function validateParams(params, linked_videos, download_tasks,callback) {
+		function validateParams(params, linked_videos, download_tasks, callback) {
 			if (params.youtube_link == undefined || params.youtube_link == null) {
 				baton.setError({
 					youtube_link: params.youtube_link,
 					public_message: "Invalid Params: youtube link"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			if (params.episode_id == undefined || params.episode_id == null || parseInt(params.episode_id) == NaN) {
@@ -253,7 +254,7 @@ module.exports = {
 					episode_id: params.episode_id,
 					public_message: "Invalid Params: episode id"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			if (linked_videos.map(vid => {
@@ -263,40 +264,44 @@ module.exports = {
 					episode_id: params.episode_id,
 					public_message: "Invalid Params: episode already linked"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
-			if(download_tasks.tasks.map(task =>{return task.episode_id}).includes(params.episode_id)){
+			if (download_tasks.tasks.map(task => {
+					return task.episode_id
+				}).includes(params.episode_id)) {
 				baton.setError({
 					episode_id: params.episode_id,
 					public_message: "Invalid Params: episode download in process"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
-			if(download_tasks.tasks.map(task =>{return task.youtube_link}).includes(params.youtube_link)){
+			if (download_tasks.tasks.map(task => {
+					return task.youtube_link
+				}).includes(params.youtube_link)) {
 				baton.setError({
 					episode_id: params.episode_id,
 					public_message: "Invalid Params: youtube link download in process"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			callback()
 		}
 
-		dataLoader(function(linked_videos, download_tasks){
-			validateParams(params, linked_videos, download_tasks,function(){
-				t._updateDownloadTaskFile(baton, params, function(){
-					baton.callOrigCallback(params)
+		dataLoader(function(linked_videos, download_tasks) {
+			validateParams(params, linked_videos, download_tasks, function() {
+				t._updateDownloadTaskFile(baton, params, function() {
+					baton.json(params)
 				})
 			})
 		})
 	},
 
-	get_CreateCompilation(params, orig_callback) {
+	get_CreateCompilation(params, res) {
 		var t = this;
-		var baton = t._getBaton("get_CreateCompilation", params, orig_callback);
+		var baton = t._getBaton("get_CreateCompilation", params, res);
 
 
 		function dataLoader(callback) {
@@ -314,7 +319,7 @@ module.exports = {
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params: timestamps"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			//check compilation name exists
@@ -323,7 +328,7 @@ module.exports = {
 					compilation_name: params.compilation_name,
 					public_message: "Invalid Params: compilation name"
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			//validate each timestamp
@@ -355,7 +360,7 @@ module.exports = {
 				}
 			})
 			if (errorOccur) {
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			//check logo if exists
@@ -371,7 +376,7 @@ module.exports = {
 				t._postCompilation(baton, params, function(updated_params) {
 					updated_params.compilation_id = updated_params.compilation_id.toString()
 					t._updateTaskFile(baton, updated_params.compilation_id, params.timestamps, params.logo, function() {
-						baton.callOrigCallback({
+						baton.json({
 							compilation_id: updated_params.compilation_id,
 							compilation_name: updated_params.compilation_name
 						})
@@ -389,7 +394,7 @@ module.exports = {
 					task_file: TASK_FILE_PATH,
 					public_message: 'Internal Error :  Could not put compilation video creation in queue'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			} else callback((data == '' ? JSON.parse('{}') : JSON.parse(data)))
 		})
@@ -443,7 +448,7 @@ module.exports = {
 						task_file: TASK_FILE_PATH,
 						public_message: 'Internal Error :  Could not put compilation video creation in queue'
 					})
-					baton.throwError()
+					t._generateError(baton)
 					return
 				} else callback()
 			})
@@ -456,7 +461,7 @@ module.exports = {
 
 	},
 
-	_readDownloadTaskFile(baton,callback){
+	_readDownloadTaskFile(baton, callback) {
 		fs.readFile(DOWNLOAD_TASK_FILE_PATH, function(err, data) {
 			if (err) {
 				baton.setError({
@@ -465,16 +470,19 @@ module.exports = {
 					task_file: DOWNLOAD_TASK_FILE_PATH,
 					public_message: 'Internal Error :  Could not put compilation video creation in queue'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			} else callback((data == '' ? JSON.parse('{\"tasks\":[]}') : JSON.parse(data)))
 		})
 	},
 
-	_updateDownloadTaskFile(baton, params, callback){
+	_updateDownloadTaskFile(baton, params, callback) {
 		var t = this
-		t._readDownloadTaskFile(baton, function(download_tasks){
-			download_tasks.tasks.push({youtube_link: params.youtube_link, episode_id : params.episode_id})
+		t._readDownloadTaskFile(baton, function(download_tasks) {
+			download_tasks.tasks.push({
+				youtube_link: params.youtube_link,
+				episode_id: params.episode_id
+			})
 			fs.writeFile(DOWNLOAD_TASK_FILE_PATH, JSON.stringify(download_tasks), function(err) {
 				if (err) {
 					baton.setError({
@@ -483,16 +491,16 @@ module.exports = {
 						task_file: DOWNLOAD_TASK_FILE_PATH,
 						public_message: 'Internal Error :  Could not update download task into queue'
 					})
-					baton.throwError()
+					t._generateError(baton)
 					return
 				} else callback()
 			})
 		})
 	},
 
-	get_CompilationVideoStatus(params, orig_callback) {
+	get_CompilationVideoStatus(params, res) {
 		var t = this
-		var baton = t._getBaton("get_CompilationVideoStatus", null, orig_callback);
+		var baton = t._getBaton("get_CompilationVideoStatus", null, res);
 
 		params.compilation_id = params.compilation_id.toString()
 
@@ -503,21 +511,21 @@ module.exports = {
 				})
 				return
 			}
-			baton.callOrigCallback(status)
+			baton.json(status)
 		})
 
 	},
 
 	//download video
-	get_downloadCompilation(params, res, orig_callback) {
+	get_downloadCompilation(params, res) {
 		var t = this
-		var baton = t._getBaton("get_CompilationVideo", null, orig_callback);
+		var baton = t._getBaton("get_CompilationVideo", null, res);
 
 		t._assertCompilationIdExists(baton, params.compilation_id, function(comp_path) {
 			baton.orig_callback = function(data) {
 				res.download(data);
 			}
-			baton.callOrigCallback(comp_path)
+			baton.json(comp_path)
 		})
 
 	},
@@ -538,7 +546,7 @@ module.exports = {
 					compilation_id: comp_id,
 					public_message: 'Invalid compilation id: compilation does not exist'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			} else if (!comp_videos.map(function(comp) {
 					return comp[0]
@@ -547,7 +555,7 @@ module.exports = {
 					compilation_id: comp_id,
 					public_message: 'Invalid compilation id: compilation does not exist'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			callback(COMPILATION_FOLDER + "/" + comp_id + ".mp4")
@@ -561,6 +569,7 @@ module.exports = {
 	},
 
 	_assertLogoExists(baton, logo_name, callback) {
+		var t = this
 		this._getAllLogos(baton, function(logo_files) {
 			if (!logo_files.map(file => {
 					return file[0]
@@ -569,7 +578,7 @@ module.exports = {
 					logo_name: logo_name,
 					public_message: 'Invalid logo : logo name does not exist'
 				})
-				baton.throwError()
+				t._generateError(baton)
 				return
 			}
 			callback()
@@ -604,7 +613,7 @@ module.exports = {
 				timestamp_server_error: err.toString(),
 				error_details: 'Error from making https call to episode data'
 			})
-			baton.throwError()
+			t._generateError(baton)
 			return
 		})
 		req.end()
@@ -639,7 +648,7 @@ module.exports = {
 				timestamp_server_error: err.toString(),
 				error_details: 'Error from making https call to create compilation'
 			})
-			baton.throwError()
+			t._generateError(baton)
 			req.end()
 		})
 
@@ -652,7 +661,7 @@ module.exports = {
 	 * Original Callback will be stored, and method sequence will be stored, along with error
 	 * uses 'call-by-sharing' ; like call-by-reference, but only for properties of objects
 	 */
-	_getBaton(method, params, orig_callback, response) {
+	_getBaton(method, params, res) {
 		var t = this;
 		var time = new Date();
 		return {
@@ -661,16 +670,17 @@ module.exports = {
 			start_time: time.getTime(),
 			err: [],
 			//the original callback set in 'post' / 'get' endpoint calls
-			orig_callback: orig_callback,
 			callOrigCallback: function(data) {
 				var end_time = new Date()
 				this.duration = end_time.getTime() - this.start_time
 				console.log(this.methods[0] + " | " + this.duration)
 				this.orig_callback(data)
 			},
+			res: res,
 			params: params,
 			//method sequence
 			methods: [method],
+			requestType: 'GET',
 			addMethod: function(meth) {
 				this.methods.push(meth)
 			},
@@ -678,7 +688,16 @@ module.exports = {
 			setError: function(error) {
 				var end_time = new Date()
 				this.duration = end_time.getTime() - this.start_time
-				this.err.push(JSON.stringify( error));
+				this.err.push(error);
+			},
+			sendError: function(data) {
+				res.status(500).json(data)
+			},
+			json: function(data) {
+				var end_time = new Date()
+				this.duration = end_time.getTime() - this.start_time
+				console.log(this.methods[0] + " | " + this.duration)
+				this.res.status((this.requestType == "GET" ? 200 : 201)).json(data)
 			},
 			throwError: function(keepErrorMessage) {
 				t._generateError(this, keepErrorMessage)
@@ -688,21 +707,21 @@ module.exports = {
 
 
 	_generateError(baton, keepErrorMessage) {
-		var response = (keepErrorMessage ? JSON.parse(baton.err[0]) : {
-			'id': baton.id,
-			'error_message': baton.err.map(function(error) {
-				return (JSON.parse(error).public_message ? JSON.parse(error).public_message : 'An internal error has occured')
-			}).join('.')
+		var printableBaton = {}
+		baton.duration = new Date().getTime() - baton.start_time
+		Object.keys(baton).forEach(function(key) {
+			if (typeof baton[key] !== 'function') printableBaton[key] = baton[key]
 		});
-		baton.orig_callback(response)
-		delete baton.orig_callback
-		delete baton.addMethod
-		delete baton.setError
-		delete baton.throwError
-		delete baton.callOrigCallback
+		delete printableBaton.res
 		console.log('----------------')
-		console.log(JSON.stringify(baton))
+		console.log(printableBaton)
 		console.log()
+		baton.sendError((keepErrorMessage ? baton.err[0] : {
+			'id': baton.id,
+			'error_message': baton.err.map(function(err) {
+				return err.public_message
+			}).join('.')
+		}));
 	},
 
 	_generateServerError(err) {
