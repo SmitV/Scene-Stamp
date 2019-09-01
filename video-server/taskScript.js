@@ -21,6 +21,8 @@ var TEST_PYTHON_FILE = 'testPython.py'
 
 var currentTasks = []
 
+var SUB_TIMESTAMP_DURATION = 100
+
 //only one video will get downloaded at a time
 var currentDownloadTask = null
 
@@ -95,7 +97,8 @@ module.exports = {
 			COMPILATION_FOLDER,
 			BRANDING_FOLDER,
 			TASK_FILE_PATH,
-			DOWNLOAD_TASK_FILE_PATH
+			DOWNLOAD_TASK_FILE_PATH,
+			SUB_TIMESTAMP_DURATION
 		}
 	},
 
@@ -484,7 +487,6 @@ module.exports = {
 
 		this.callTestPythonScript(error => {
 			if (!error) {
-				console.log('check idr')
 				this.checkDirectories(error => {
 					callback(error)
 				})

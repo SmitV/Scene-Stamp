@@ -4,8 +4,6 @@ var fs = require('fs')
 var cred = require('./credentials.js')
 var taskScript = require('./taskScript')
 
-var SUB_TIMESTAMP_DURATION = 10
-
 const {
 	ROOT_DIR,
 	UNLINKED_FOLDER,
@@ -13,7 +11,8 @@ const {
 	COMPILATION_FOLDER,
 	BRANDING_FOLDER,
 	TASK_FILE_PATH,
-	DOWNLOAD_TASK_FILE_PATH
+	DOWNLOAD_TASK_FILE_PATH,
+	SUB_TIMESTAMP_DURATION
 } = taskScript.getAllDirectories();
 
 module.exports = {
@@ -522,10 +521,8 @@ module.exports = {
 		var baton = t._getBaton("get_CompilationVideo", null, res);
 
 		t._assertCompilationIdExists(baton, params.compilation_id, function(comp_path) {
-			baton.orig_callback = function(data) {
-				res.download(data);
-			}
-			baton.json(comp_path)
+			
+			res.download(comp_path);
 		})
 
 	},

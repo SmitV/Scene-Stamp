@@ -66,10 +66,9 @@ describe('tests', function() {
 		UNLINKED_FOLDER,
 		LINKED_FOLDER,
 		COMPILATION_FOLDER,
-		BRANDING_FOLDER
+		BRANDING_FOLDER,
+		SUB_TIMESTAMP_DURATION
 	} = taskScript.getAllDirectories();
-
-	var SUB_TIMESTAMP_DURATION = 10;
 
 	function sucsessResponse(response) {
 		expect(response.error_message).to.equal(undefined);
@@ -637,7 +636,7 @@ describe('tests', function() {
 				}).end((err, res, body) => {
 					assertSuccess(res)
 					expect(res.body.completed).to.equal(false)
-					expect(res.body.percentage).to.equal(4 / 5);
+					expect(res.body.percentage).to.equal(2/3);
 					done()
 				})
 			})
