@@ -1,4 +1,7 @@
 from moviepy.editor import *
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip 
+
 from os import path
 import sys, getopt
 import random
