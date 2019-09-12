@@ -4,11 +4,54 @@ const bodyParser = require('body-parser');
 var action = require('./action.js')
 var taskScript = require('./taskScript.js')
 
+
+var url = require('url');
+var Arena = require('bull-arena');
+var queue = require('./queue')
+
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: false
 }));
+
+function getRedisConfig(redisUrl) {
+  const redisConfig = url.parse(redisUrl);
+  return {
+    host: redisConfig.hostname || 'localhost',
+    port: Number(redisConfig.port || 6379),
+    database: (redisConfig.pathname || '/0').substr(1) || '0',
+    password: redisConfig.auth ? redisConfig.auth.split(':')[1] : undefined
+  };
+}
+
+app.use('/', Arena({
+	queues: [
+	{
+		name: 'video',
+		hostId: queue.REDIS_CRED.host,
+		redis: getRedisConfig(queue.REDIS_URL)
+	}]
+}, {
+	basePath: '/arena',
+	disableListen: true
+}));
+
+app.use('/add', function(req, res) {
+	queue.add({
+		id : Math.random()
+	})
+	res.json('done')
+})
+
+app.use('/clean', function(req, res) {
+	queue.clean(res)
+})
+
+app.use('/status', function(req, res){
+
+	queue.status(res)
+})
 
 
 var endpoints = [{
@@ -27,13 +70,12 @@ var endpoints = [{
 		action: function(req, res) {
 			action.get_allLinkedVides(res);
 		}
-	}, 
-	 {
+	}, {
 		url: 'getLogos',
 		action: function(req, res) {
 			action.get_allLogos(res);
 		}
-	},{
+	}, {
 		url: 'createCompilation',
 		action: function(req, res) {
 			action.get_CreateCompilation(req.body, res);
@@ -49,7 +91,7 @@ var endpoints = [{
 		//gets status of a compilation video 
 		url: 'getCompilationStatus',
 		action: function(req, res) {
-		action.get_CompilationVideoStatus(req.query, res);
+			action.get_CompilationVideoStatus(req.query, res);
 		}
 	}, {
 		//will call res.download to the compilation video file 
@@ -57,10 +99,9 @@ var endpoints = [{
 		action: function(req, res) {
 			action.get_downloadCompilation(req.query, res);
 		}
-	},
-	{
+	}, {
 		url: 'downloadYoutubeVideo',
-		action: function(req, res){
+		action: function(req, res) {
 			action.get_downloadYoutbeVideo(req.query, res)
 		}
 	}
@@ -102,17 +143,17 @@ var server = app.listen(process.env.PORT || 8081, function() {
 		})
 
 	}
-	
+
 	taskScript.initialTests(err => {
 		if (err) {
 			console.log('Did not start server')
 			server.close()
-			return 
+			return
 		}
 		taskLoop();
 	})
 })
 
 module.exports = {
-	server:server
+	server: server
 }
