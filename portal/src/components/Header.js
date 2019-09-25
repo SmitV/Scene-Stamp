@@ -4,12 +4,21 @@ import "./Header.css";
 
 import {connect} from "react-redux"
 import {getTabs} from "../actions/nav-actions"
-import {getCompilationData} from "../actions/timestamp-actions"
+
+import {
+  GET_TABS
+} from '../actions/action-types'
 
 const mapStateToProps = state => ({
   tabs : state.nav.tabs,
   compilation_length : state.timestamp.compilation_data.length
 })
+
+function mapDispatchToProps(dispatch) {
+    return({
+        tabs: () => {dispatch(GET_TABS)}
+    })
+}
 
 class Header extends React.Component {
 
@@ -29,8 +38,7 @@ class Header extends React.Component {
 
     return (
       <nav className="nav-container">
-        <div>SCENE STAMP</div>
-        <div> {this.props.compilation_length}</div>
+        <div>SCENE STAMP {this.props.compilation_length}</div>
         <div>
           {tabs}
         </div>
@@ -40,5 +48,5 @@ class Header extends React.Component {
 }
 
 
-export default connect(mapStateToProps, {getTabs,getCompilationData})(Header)
+export default connect(mapStateToProps, {getTabs})(Header)
 

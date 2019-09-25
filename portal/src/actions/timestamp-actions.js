@@ -1,5 +1,6 @@
 import {
-	GET_COMPILATION_DATA
+	GET_COMPILATION_DATA,
+	NEW_COMPILATION_DATA
 } from './action-types'
 
 
@@ -15,9 +16,25 @@ var sample_compilation_data = [{
 },
 ]
 
+var createNewCompilation = () => {
+	var id = Math.floor(Math.random() * (20 + 3 )) +4;
+	return {
+		title: 'Comp '+id,
+		views: id * 1000000
+	}
+}
+
 export var getCompilationData = () => dispatch => {
 	dispatch({
 		type: GET_COMPILATION_DATA,
 		payload: sample_compilation_data
+	})
+}
+
+export var newCompilation = () => dispatch => {
+	console.log('new compilation ACTION')
+	dispatch({
+		type: NEW_COMPILATION_DATA, 
+		payload: createNewCompilation()
 	})
 }

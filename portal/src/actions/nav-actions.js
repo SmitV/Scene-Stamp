@@ -12,8 +12,8 @@ var sample_tabs = [{
 }]
 
 export var getTabs = () => dispatch => {
-	dispatch({
-		type: GET_TABS,
-		payload: sample_tabs
-	})
+		dispatch({
+			type: GET_TABS,
+			payload: sample_tabs
+		})
 }

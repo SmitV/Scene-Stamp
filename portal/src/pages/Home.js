@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import {connect} from "react-redux"
-import {getCompilationData} from "../actions/timestamp-actions"
+import {getCompilationData, newCompilation} from "../actions/timestamp-actions"
 
 
 const mapStateToProps = state => ({
@@ -15,7 +15,12 @@ class Home extends React.Component {
 		this.props.getCompilationData()
 	}
 
-  render() {
+	createNewCompilation(e) {
+		e.preventDefault();
+		this.props.newCompilation();
+	}
+
+  	render() {
 
   	var vids = [];
     for( var vid of this.props.compilation_data){
@@ -28,6 +33,7 @@ class Home extends React.Component {
     }
 
     return (
+    	<div>
        	<table>
 		  <tr>
 		    <th>Compilation Title</th>
@@ -35,8 +41,10 @@ class Home extends React.Component {
 		  </tr>
 		  {vids}
 		</table>
+		<button onClick={this.createNewCompilation.bind(this)}>New Compilation</button>
+		</div>
     );
   }
 }
 
-export default connect(mapStateToProps, {getCompilationData})(Home)
+export default connect(mapStateToProps, {getCompilationData, newCompilation})(Home)
