@@ -1,9 +1,11 @@
 import {
-	GET_TABS
+	GET_TABS,
+	UPDATE_SIDENAV_EXPANDED
 } from '../actions/action-types'
 
 const initialState = {
 	tabs: [],
+	expanded:false
 };
 
 function navReducer(state = initialState, action) {
@@ -12,6 +14,10 @@ function navReducer(state = initialState, action) {
 			return {
 				...state,
 				tabs: action.payload}
+		case UPDATE_SIDENAV_EXPANDED:
+			return {
+				...state,
+				expanded: action.payload}
 		default:
 			return state
 

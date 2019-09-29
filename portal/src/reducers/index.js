@@ -5,5 +5,6 @@ import timestampReducer from './timestamp-reducer'
 
 export default combineReducers({
 	nav:navReducer,
-	timestamp:timestampReducer
+	timestamp:timestampReducer,
+	
 })

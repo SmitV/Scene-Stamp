@@ -32,7 +32,6 @@ export var getCompilationData = () => dispatch => {
 }
 
 export var newCompilation = () => dispatch => {
-	console.log('new compilation ACTION')
 	dispatch({
 		type: NEW_COMPILATION_DATA, 
 		payload: createNewCompilation()

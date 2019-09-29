@@ -1,4 +1,5 @@
 import React from "react";
+import { withRouter } from "react-router"
 import { Link } from "react-router-dom";
 import "./Header.css";
 
@@ -27,6 +28,12 @@ class Header extends React.Component {
   }
 
   render() {
+    
+    var matchingTab = this.props.tabs.find(tab => {return tab.path == this.props.location.pathname})
+    if(matchingTab && matchingTab.public){
+      return null
+    }
+
     var tabs = [];
     for( var tab of this.props.tabs){
       tabs.push( 
@@ -35,6 +42,8 @@ class Header extends React.Component {
         </div>
         )
     }
+
+
 
     return (
       <nav className="nav-container">
@@ -48,5 +57,5 @@ class Header extends React.Component {
 }
 
 
-export default connect(mapStateToProps, {getTabs})(Header)
+export default connect(mapStateToProps, {getTabs})(withRouter(Header))
 

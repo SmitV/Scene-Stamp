@@ -12,7 +12,7 @@ const mapStateToProps = state => ({
 class Home extends React.Component {
 
 	componentWillMount(){
-		this.props.getCompilationData()
+		if(this.props.compilation_data.length == 0) this.props.getCompilationData()
 	}
 
 	createNewCompilation(e) {
@@ -21,7 +21,6 @@ class Home extends React.Component {
 	}
 
   	render() {
-
   	var vids = [];
     for( var vid of this.props.compilation_data){
       vids.push( 

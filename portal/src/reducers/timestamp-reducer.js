@@ -14,6 +14,7 @@ function timestampReducer(state = initialState, action) {
 				...state,
 				compilation_data: action.payload}
 		case NEW_COMPILATION_DATA:
+		
 			return {
 				...state,
 				compilation_data: state.compilation_data.concat(action.payload)}

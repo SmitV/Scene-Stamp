@@ -13,19 +13,41 @@ import Login from "./pages/Login";
 
 import "./App.css";
 
-function App() {
 
-  return (
-  	<Provider store={store}>
+
+class Page extends React.Component {
+
+  render() {
+    return (
+      <div >
+        <div className="Page">
+          <Route  exact path={this.props.path} component={this.props.component} />
+          </div>
+      </div>
+      )
+  }
+}
+
+
+
+class App extends React.Component {
+
+
+  render() {
+
+    return (
+      <Provider store={store}>
     <div className="App">
       <Router>
-      	<Header />
-        <Route exact path="/" component={Home} />
-        <Route exact path="/login" component={Login} />
+        <Header />
+        <Page exact path="/" component={Home} />
+        <Page exact path="/login" component={Login} />
       </Router>
     </div>
     </Provider>
-  );
+    );
+
+  }  
 }
 
 export default App;
