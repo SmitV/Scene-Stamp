@@ -7,31 +7,24 @@ import store from "./store"
 //Components
 import Header from "./components/Header"
 
+
 //Pages
+import Page from "./pages/Page"
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 
 import "./App.css";
 
 
-
-class Page extends React.Component {
-
-  render() {
-    return (
-      <div >
-        <div className="Page">
-          <Route  exact path={this.props.path} component={this.props.component} />
-          </div>
-      </div>
-      )
-  }
-}
+const Page404 = ({ location }) => (
+   <div>
+      <h2>No match found for <code>{location.pathname}</code></h2>
+   </div>
+);
 
 
 
 class App extends React.Component {
-
 
   render() {
 
@@ -40,8 +33,8 @@ class App extends React.Component {
     <div className="App">
       <Router>
         <Header />
-        <Page exact path="/" component={Home} />
-        <Page exact path="/login" component={Login} />
+        <Page  path="/home" component={Home} />
+        <Route path="/login" component={Login} />
       </Router>
     </div>
     </Provider>

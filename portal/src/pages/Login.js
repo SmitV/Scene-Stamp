@@ -1,46 +1,65 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Redirect } from "react-router-dom";
+
+import {connect} from 'react-redux'
+import {loginWithCredentials} from "../actions/authenticate-actions"
+
+
+const mapStateToProps = state => ({
+  attempting_login : state.authenticate.attempting_login,
+  auth_token: state.authenticate.local_auth_token,
+})
 
 // Main app
-export default class Login extends React.Component {
+class Login extends React.Component {
   constructor(props) {
     super(props);
       // Bindings
+    this.state = {
+      username:null,
+      password:null
+    }
+
+
   }
+
+   handleUsernameChange(event) {
+    this.setState({username: event.target.value});
+  }
+
+  handlePasswordChange(event) {
+    this.setState({password: event.target.value});
+  }
+
 
   handleSubmit(e) {
     e.preventDefault();
-    return false;
+    this.props.loginWithCredentials(this.state)
   }
+
   render() {
 
-    // const for React CSS transition declaration
-    return <Modal onSubmit={ this.handleSubmit } key='modal'/>;
+    if(this.props.auth_token){
+      return (<Redirect to={{ pathname: '/home', state: { from: this.props.location } }} />)
+    }
+
+   return (
+
+    <div className='Modal'>
+    {this.props.attempting_login ? <div> Attempting login </div> : null }
+      <form onSubmit= { this.handleSubmit.bind(this) }>
+        <input type='text' name='username' value = {this.state.username} onChange={this.handleUsernameChange.bind(this)}  placeholder='username' required autocomplete='false'/>
+        <br/>
+        <input type='password' name='passowrd' value = {this.state.password} onChange={this.handlePasswordChange.bind(this)}  placeholder='password' required autocomplete='false'/>
+        <br/>
+        <button> Sign In</button>
+      </form>
+      <a href='#'>Lost your password ?</a>
+    </div>
+    )
   }
 }
 
-// Modal
-class Modal extends React.Component {
-  render() {
-    return <div className='Modal'>
-              <form onSubmit= { this.props.onSubmit }>
-                <Input type='text' name='username' placeholder='username' />
-                <Input type='password' name='password' placeholder='password' />
-                <button> Sign In</button>
-              </form>
-                <a href='#'>Lost your password ?</a>
-           </div>
-  }
-}
-
-// Generic input field
-class Input extends React.Component {
-  render() {
-    return <div className='Input'>
-        <input type={ this.props.type } name={ this.props.name } placeholder={ this.props.placeholder } required autocomplete='false'/>
-        <label for={ this.props.name } ></label>
-      </div>
-  }
-
-}
+export default connect(mapStateToProps, {loginWithCredentials})(Login)
 

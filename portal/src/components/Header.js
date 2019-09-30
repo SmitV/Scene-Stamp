@@ -4,38 +4,43 @@ import { Link } from "react-router-dom";
 import "./Header.css";
 
 import {connect} from "react-redux"
-import {getTabs} from "../actions/nav-actions"
-
-import {
-  GET_TABS
-} from '../actions/action-types'
+import {logout} from "../actions/authenticate-actions"
 
 const mapStateToProps = state => ({
-  tabs : state.nav.tabs,
   compilation_length : state.timestamp.compilation_data.length
 })
 
-function mapDispatchToProps(dispatch) {
-    return({
-        tabs: () => {dispatch(GET_TABS)}
-    })
-}
 
 class Header extends React.Component {
 
-  componentWillMount(){
-    this.props.getTabs();
+  constructor() {
+    super();
+    this.state = {
+      public:[
+      '/login'],
+      tabs : [{
+        path: '/home',
+        text: 'Home'
+      }],
+      actions: [{
+        text:'Logout',
+        action: this.logout
+      }]
+    }
+  }
+
+  logout() {
+    this.props.logout()
   }
 
   render() {
     
-    var matchingTab = this.props.tabs.find(tab => {return tab.path == this.props.location.pathname})
-    if(matchingTab && matchingTab.public){
+    if(this.state.public.includes(this.props.location.pathname)){
       return null
     }
 
     var tabs = [];
-    for( var tab of this.props.tabs){
+    for( var tab of this.state.tabs){
       tabs.push( 
         <div>
             <Link to={tab.path}>{tab.text}</Link>
@@ -43,7 +48,13 @@ class Header extends React.Component {
         )
     }
 
-
+    for( var action of this.state.actions){
+      tabs.push( 
+        <div onClick={action.action.bind(this)}>
+            {action.text}
+        </div>
+        )
+    }
 
     return (
       <nav className="nav-container">
@@ -57,5 +68,5 @@ class Header extends React.Component {
 }
 
 
-export default connect(mapStateToProps, {getTabs})(withRouter(Header))
+export default connect(mapStateToProps, {logout})(withRouter(Header))
 

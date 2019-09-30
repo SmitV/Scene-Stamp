@@ -3,6 +3,8 @@
 export const GET_COMPILATION_DATA = "GET_COMPILATION_DATA"
 export const NEW_COMPILATION_DATA = "NEW_COMPILATION_DATA"
 
-//ui actions 
-export const UPDATE_SIDENAV_EXPANDED = "UPDATE_SIDENAV_EXPANDED"
-export const GET_TABS = "GET_TABS"
+//authenticate actions
+export const GET_LOCAL_AUTH_TOKEN = "GET_LOCAL_AUTH_TOKEN"
+export const LOGIN_USER = "LOGIN_USER"
+export const LOGIN_REQUEST_STATUS = "LOGIN_REQUEST_STATUS"
+export const LOGOUT = "LOGOUT"
