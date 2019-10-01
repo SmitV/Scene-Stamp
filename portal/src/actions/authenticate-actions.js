@@ -8,6 +8,7 @@ import {
 import {login} from './timestamp-server-actions'
 
 
+
 export var getLocalAuthToken = () => dispatch => {
 	var localAuthToken = localStorage.getItem('ss_auth')
 	dispatch({
@@ -31,15 +32,13 @@ export var loginWithCredentials = (data) => dispatch => {
 	}
 
 	var onFailure = (res) => {
-		console.log('login error '+ res.error_message)
-		//dispatch an error message 
 		dispatch({
 			type:LOGIN_REQUEST_STATUS,
 			type:false
 		})
 	}
 
-	login(data, onSucsess, onFailure)
+	login(dispatch, data, onSucsess, onFailure)
 }
 
 export var logout = () => dispatch => {
