@@ -20,7 +20,7 @@ export var getLocalAuthToken = () => dispatch => {
 export var loginWithCredentials = (data) => dispatch => {
 	dispatch({
 		type:LOGIN_REQUEST_STATUS,
-		type:true
+		payload:true
 	})
 
 	var onSucsess = (auth_token) => {
@@ -34,7 +34,7 @@ export var loginWithCredentials = (data) => dispatch => {
 	var onFailure = (res) => {
 		dispatch({
 			type:LOGIN_REQUEST_STATUS,
-			type:false
+			payload:false
 		})
 	}
 

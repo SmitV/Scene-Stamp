@@ -13,6 +13,6 @@ export var notifyApiError = (errorMessage) => dispatch => {
 
 export var newApiRequest = () => dispatch => {
 	dispatch({
-		type: API_REQUEST_ERROR,
+		type: API_NEW_REQUEST,
 	})
 }

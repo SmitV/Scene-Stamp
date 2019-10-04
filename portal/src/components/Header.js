@@ -1,7 +1,9 @@
 import React from "react";
 import { withRouter } from "react-router"
 import { Link } from "react-router-dom";
+
 import "./Header.css";
+import {PRIMARY} from "../color-scheme"
 
 import {connect} from "react-redux"
 import {logout} from "../actions/authenticate-actions"
@@ -11,12 +13,12 @@ const mapStateToProps = state => ({
 })
 
 
-class Header extends React.Component {
+export class Header extends React.Component {
 
   constructor() {
     super();
     this.state = {
-      public:[
+      noHeader:[
       '/login'],
       tabs : [{
         path: '/home',
@@ -35,31 +37,31 @@ class Header extends React.Component {
 
   render() {
     
-    if(this.state.public.includes(this.props.location.pathname)){
+    if(this.state.noHeader.includes(this.props.location.pathname)){
       return null
     }
 
     var tabs = [];
-    for( var tab of this.state.tabs){
+    this.state.tabs.forEach((tab, index) => {
       tabs.push( 
-        <div>
+        <div key={index} >
             <Link to={tab.path}>{tab.text}</Link>
         </div>
         )
-    }
+    })
 
-    for( var action of this.state.actions){
+    this.state.actions.forEach((action, index)=>{
       tabs.push( 
-        <div onClick={action.action.bind(this)}>
-            {action.text}
+        <div key={this.state.tabs.length + index} onClick={action.action.bind(this)}>
+            <div className='actionHeader'>{action.text}</div>
         </div>
         )
-    }
+    })
 
     return (
-      <nav className="nav-container">
-        <div>SCENE STAMP {this.props.compilation_length}</div>
-        <div>
+      <nav id="mainNavBar" className="nav-container" style={{backgroundColor:PRIMARY }}>
+        <div id="navBarTitle">SCENE STAMP {this.props.compilation_length}</div>
+        <div id="navBarHeaders">
           {tabs}
         </div>
       </nav>

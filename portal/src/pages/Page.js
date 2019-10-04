@@ -16,8 +16,6 @@ const mapStateToProps = state => ({
 
 class Page extends React.Component {
 
-
-
   render() {
     if(this.props.error){
      toast.error(this.props.error)

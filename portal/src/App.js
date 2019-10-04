@@ -16,14 +16,6 @@ import Login from "./pages/Login";
 import "./App.css";
 
 
-const Page404 = ({ location }) => (
-   <div>
-      <h2>No match found for <code>{location.pathname}</code></h2>
-   </div>
-);
-
-
-
 class App extends React.Component {
 
   render() {

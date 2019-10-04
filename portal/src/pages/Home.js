@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 
 import {connect} from "react-redux"
 import {getCompilationData, newCompilation} from "../actions/timestamp-actions"
@@ -12,7 +11,7 @@ const mapStateToProps = state => ({
 class Home extends React.Component {
 
 	componentWillMount(){
-		if(this.props.compilation_data.length == 0) this.props.getCompilationData()
+		if(this.props.compilation_data.length === 0) this.props.getCompilationData()
 	}
 
 	createNewCompilation(e) {

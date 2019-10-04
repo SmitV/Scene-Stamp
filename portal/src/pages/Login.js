@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { Redirect } from "react-router-dom";
 
 import {connect} from 'react-redux'
@@ -55,7 +54,6 @@ class Login extends React.Component {
         <br/>
         <button> Sign In</button>
       </form>
-      <a href='#'>Lost your password ?</a>
     </div>
     )
   }
