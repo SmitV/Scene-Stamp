@@ -3,13 +3,12 @@ import { withRouter } from "react-router"
 import { Link } from "react-router-dom";
 
 import "./Header.css";
-import {PRIMARY} from "../color-scheme"
+import {ACCENT_1} from "../../color-scheme"
 
 import {connect} from "react-redux"
-import {logout} from "../actions/authenticate-actions"
+import {logout} from "../../actions/authenticate-actions"
 
 const mapStateToProps = state => ({
-  compilation_length : state.timestamp.compilation_data.length
 })
 
 
@@ -59,9 +58,9 @@ export class Header extends React.Component {
     })
 
     return (
-      <nav id="mainNavBar" className="nav-container" style={{backgroundColor:PRIMARY }}>
-        <div id="navBarTitle">SCENE STAMP {this.props.compilation_length}</div>
-        <div id="navBarHeaders">
+      <nav id="mainNavBar" className="nav-container">
+        <div id="navBarTitle">SCENE STAMP</div>
+        <div id="navBarHeaders" style={{backgroundColor:ACCENT_1 }}>
           {tabs}
         </div>
       </nav>

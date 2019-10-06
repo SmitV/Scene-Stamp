@@ -4,14 +4,15 @@ import { BrowserRouter as Router, Route } from "react-router-dom";
 import {Provider} from "react-redux"
 import store from "./store"
 
-//Components
-import Header from "./components/Header"
+import {PRIMARY} from "./color-scheme"
 
+//Components
+import Header from "./components/Header/Header"
 
 //Pages
 import Page from "./pages/Page"
-import Home from "./pages/Home";
-import Login from "./pages/Login";
+import Home from "./pages/Home/Home";
+import Login from "./pages/Login/Login";
 
 import "./App.css";
 
@@ -22,14 +23,14 @@ class App extends React.Component {
 
     return (
       <Provider store={store}>
-    <div className="App">
-      <Router>
-        <Header />
-        <Page  path="/home" component={Home} />
-        <Route path="/login" component={Login} />
-      </Router>
-    </div>
-    </Provider>
+        <div className="App" style={{backgroundColor:PRIMARY }}>
+          <Router>
+            <Header />
+            <Page  path="/home" component={Home} />
+            <Route path="/login" component={Login} />
+          </Router>
+        </div>
+      </Provider>
     );
 
   }  

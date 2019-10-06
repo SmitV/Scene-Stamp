@@ -2,7 +2,9 @@ import React from 'react';
 import { Redirect } from "react-router-dom";
 
 import {connect} from 'react-redux'
-import {loginWithCredentials} from "../actions/authenticate-actions"
+import {loginWithCredentials} from "../../actions/authenticate-actions"
+
+import './Login.css'
 
 
 const mapStateToProps = state => ({
@@ -46,6 +48,7 @@ class Login extends React.Component {
    return (
 
     <div className='Modal'>
+    <div className="title"> Scene Stamp </div>
     {this.props.attempting_login ? <div> Attempting login </div> : null }
       <form onSubmit= { this.handleSubmit.bind(this) }>
         <input type='text' name='username' value = {this.state.username} onChange={this.handleUsernameChange.bind(this)}  placeholder='username' required autocomplete='false'/>

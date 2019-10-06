@@ -1,8 +1,12 @@
+.navBarHeaders{
+  width: 2rem;
+}
+
+
 .nav-container {
   height: 75px;
   width: 100%;
   margin: 0;
-  background-color: black;
   color: white;
 }
 
@@ -12,9 +16,7 @@
 
 .nav-container > div:first-child {
   float: left;
-  font-size: 24px;
   font-weight: bold;
-  font-style: italic;
   margin-left: 2rem;
 }
 

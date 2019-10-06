@@ -1,11 +1,7 @@
-import {
-	GET_LOCAL_AUTH_TOKEN,
-	LOGIN_REQUEST_STATUS,
-	LOGIN_USER,
-	LOGOUT
-} from './action-types'
+import { GET_LOCAL_AUTH_TOKEN, LOGIN_REQUEST_STATUS, LOGIN_USER, LOGOUT } from './action-types'
 
 import {login} from './timestamp-server-actions'
+import {clearErrors} from './notification-actions'
 
 
 
@@ -23,11 +19,12 @@ export var loginWithCredentials = (data) => dispatch => {
 		payload:true
 	})
 
-	var onSucsess = (auth_token) => {
-		localStorage.setItem('ss_auth', auth_token)
+	var onSucsess = (res) => {
+		localStorage.setItem('ss_auth', res.auth_token)
+
 		dispatch({
 			type : LOGIN_USER,
-			payload: auth_token
+			payload: res.auth_token
 		})
 	}
 
@@ -42,6 +39,7 @@ export var loginWithCredentials = (data) => dispatch => {
 }
 
 export var logout = () => dispatch => {
+	dispatch(clearErrors())
 	localStorage.removeItem('ss_auth')
 	dispatch({
 		type:LOGOUT

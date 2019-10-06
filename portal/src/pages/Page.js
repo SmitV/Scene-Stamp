@@ -3,9 +3,11 @@ import {Route, Redirect } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import './Page.css'
+
 //redux 
 import {connect} from "react-redux"
-import {getLocalAuthToken} from "../actions/authenticate-actions"
+import {getLocalAuthToken, logout} from "../actions/authenticate-actions"
 
 
 const mapStateToProps = state => ({
@@ -18,7 +20,8 @@ class Page extends React.Component {
 
   render() {
     if(this.props.error){
-     toast.error(this.props.error)
+      if(this.props.error.status === 401) this.props.logout();
+      toast.error(this.props.error.error_message +"\nid:"+this.props.error.id)
     }
 
     //null check; initial value is undefined and will remain so till the auth token is retreived
@@ -42,4 +45,4 @@ class Page extends React.Component {
   }
 }
 
-export default connect(mapStateToProps, {getLocalAuthToken})(Page)
+export default connect(mapStateToProps, {getLocalAuthToken, logout})(Page)

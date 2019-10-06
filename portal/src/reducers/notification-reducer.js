@@ -1,6 +1,7 @@
 import {
 	API_NEW_REQUEST,
-	API_REQUEST_ERROR
+	API_REQUEST_ERROR,
+	CLEAR_ALL_ERRORS
 } from '../actions/action-types'
 
 const initialState = {
@@ -14,6 +15,10 @@ function notificationReducer(state = initialState, action) {
 				...state,
 				error:action.payload}
 		case API_NEW_REQUEST:
+			return {
+				...initialState
+			}
+		case CLEAR_ALL_ERRORS:
 			return {
 				...initialState
 			}
