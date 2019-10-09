@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 
 var action = require('./action.js')
 var taskScript = require('./taskScript.js')
+var auth = require('./auth')
 
 var app = express();
 app.use(bodyParser.json());
@@ -77,15 +78,20 @@ app.all('*', function(req, res, next) {
 
 
 endpoints.forEach(function(endpoint) {
-	if (endpoint.post) {
-		app.post('/' + endpoint.url, function(req, res) {
+
+	var endpointFunction = function(req, res) {
+		var params = (endpoint.post ? req.body : req.query)
+		var baton = action._getBaton(endpoint.url, params, res)
+		if (endpoint.post) baton.requestType = 'POST'
+		auth._validateRequest(baton, req, function() {
 			endpoint.action(req, res);
-		});
+		})
+	}
+	if (endpoint.post) {
+		app.post('/' + endpoint.url, endpointFunction);
 		return
 	}
-	app.get('/' + endpoint.url, function(req, res) {
-		endpoint.action(req, res);
-	});
+	app.get('/' + endpoint.url, endpointFunction);
 
 })
 

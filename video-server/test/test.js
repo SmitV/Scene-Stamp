@@ -13,6 +13,7 @@ var nock = require('nock')
 var action = require('../action')
 var taskScript = require('../taskScript')
 var cred = require('../credentials.js')
+var auth = require('../auth')
 
 sinon.stub(taskScript, 'initialTests').callsFake(callback => {
 	callback()
@@ -39,16 +40,23 @@ describe('tests', function() {
 	}
 
 
-	function sendRequest(path, params, post) {
-		if (post) {
-			return chai.request(server).post('/' + path)
-				.set('content-type', 'application/json')
-				.send(params)
-		} else {
-			return chai.request(server).get('/' + path + '?' + Object.keys(params).map(attr => {
-				return attr + '=' + params[attr]
-			}).join('&')).send()
+	function sendRequest(path, params, post, headers) {
+
+		var addHeaders = req => {
+			if (headers !== undefined) {
+				Object.keys(headers).forEach(head => {
+					req.set(head, headers[head])
+				})
+			}
+			return req
 		}
+
+		return (post ?
+			addHeaders(chai.request(server).post('/' + path).set('content-type', 'application/json')).send(params) :
+			addHeaders(chai.request(server).get('/' + path + '?' + Object.keys(params).map(attr => {
+				return attr + '=' + params[attr]
+			}).join('&'))).send())
+
 	}
 
 
@@ -208,6 +216,9 @@ describe('tests', function() {
 			return data
 		}
 
+		//timestamp server validate
+		sandbox.stub(auth, '_validateRequest').callsFake((baton, req, callback) => callback())
+
 		//episode data
 		nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(200, mockEpisodeData)
 
@@ -274,6 +285,50 @@ describe('tests', function() {
 
 	it('check root', function(){
 		expect(ROOT_DIR).to.equal('/home/ubuntu/')
+	})
+
+	context('validate', function(){
+
+		var actionSpy;
+
+		var sucValidate = () => {
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(200, {})
+		}
+
+		var failValidate = (err) => {
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(401, err)
+		}
+
+		beforeEach(() => {
+
+			actionSpy = sinon.stub()
+			//restore mock for _validateRequest
+			auth._validateRequest.restore()
+
+			sandbox.stub(action, 'get_allLinkedVides').callsFake((res) => {
+				actionSpy();
+				res.json('done')
+			})
+		})
+
+		it('should pass validation and call action', (done) => {
+			sucValidate()
+			sendRequest('getLinkedVideos',{},/*post=*/ false, {test_mode:true, auth_token:'kjl'}).end((err, res, body) => {
+				assertSuccess(res)
+				expect(actionSpy.called).is.true;
+				done()
+			})
+		})
+
+		it('should fail validation', (done) => {
+			var error = {id:101, error_message: 'InTest Error'}
+			failValidate(error)
+			sendRequest('getLinkedVideos',{},/*post=*/ false, {test_mode:true, auth_token:'kjl'}).end((err, res, body) => {
+				assertErrorMessage(res, error.error_message)
+				expect(actionSpy.called).is.false;
+				done()
+			})
+		})
 	})
 
 	context('file sytem api', function() {
@@ -351,6 +406,7 @@ describe('tests', function() {
 				error_message: 'InTest Timestamp Error'
 			};
 			nock.cleanAll()
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/validate').reply(200, {})
 			nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
