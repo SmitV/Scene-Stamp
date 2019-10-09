@@ -78,10 +78,6 @@ describe('tests', function() {
 		SUB_TIMESTAMP_DURATION
 	} = taskScript.getAllDirectories();
 
-	function sucsessResponse(response) {
-		expect(response.error_message).to.equal(undefined);
-	}
-
 	function createSubTimestamps(ts, callback) {
 		var subTimestamps = []
 		ts.episode_name = ts.episode_id.toString() + '.mp4'
@@ -129,6 +125,10 @@ describe('tests', function() {
 		})
 	}
 
+	function createFakeBaton(params) {
+			return action._getBaton('testAction', params, fakeRes)
+		}
+
 	beforeEach(function() {
 
 		sandbox = sinon.createSandbox();
@@ -159,13 +159,6 @@ describe('tests', function() {
 			body: {},
 			get(attr) {
 				return this.headers[attr]
-			}
-		}
-
-		fakeBaton = {
-			methods: [],
-			addMethod: function(method) {
-				this.methods.push(method)
 			}
 		}
 
@@ -287,7 +280,7 @@ describe('tests', function() {
 		expect(ROOT_DIR).to.equal('/home/ubuntu/')
 	})
 
-	context('validate', function(){
+	context('validate for all requests', function(){
 
 		var actionSpy;
 
@@ -301,13 +294,15 @@ describe('tests', function() {
 
 		beforeEach(() => {
 
+			fakeBaton = createFakeBaton('getLinkedVideos')
+
 			actionSpy = sinon.stub()
 			//restore mock for _validateRequest
 			auth._validateRequest.restore()
 
-			sandbox.stub(action, 'get_allLinkedVides').callsFake((res) => {
+			sandbox.stub(action, 'get_allLinkedVides').callsFake((fakeBaton, params, res) => {
 				actionSpy();
-				res.json('done')
+				fakeBaton.json('done')
 			})
 		})
 
@@ -523,10 +518,9 @@ describe('tests', function() {
 			var params = existingTimestampParams
 
 			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
-				assertSuccess(res)
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
-					sucsessResponse(res)
+					assertSuccess(res,/*post=*/ true)
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
 					done()
 				})
@@ -541,7 +535,7 @@ describe('tests', function() {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
-					sucsessResponse(res)
+					assertSuccess(res,/*post=*/ true)
 					done()
 				})
 			})
@@ -565,7 +559,7 @@ describe('tests', function() {
 						var taskFileContent = JSON.parse(mockFileSystemData['tasks.json'])
 						expect(taskFileContent[existingTimestampParams.compilation_id]).to.deep.equal(existingTaskContent[existingTimestampParams.compilation_id]);
 						expect(taskFileContent[content.compilation_id]).to.deep.equal(content[content.compilation_id]);
-						sucsessResponse(res)
+						assertSuccess(res,/*post=*/ true)
 						done()
 					})
 				})

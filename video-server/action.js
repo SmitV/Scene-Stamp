@@ -17,9 +17,8 @@ const {
 
 module.exports = {
 
-	get_linkVideoToEpisode(params, res) {
+	get_linkVideoToEpisode(baton, params, res) {
 		var t = this;
-		var baton = t._getBaton("get_linkVideoToEpisode", params, res);
 
 		function dataLoader(callback) {
 			t._getAllUnlinkedVideos(baton, function(unlinked_videos) {
@@ -88,7 +87,7 @@ module.exports = {
 					baton.setError({
 						oldFileName: oldFileName,
 						newFileName: newFileName,
-						error:err,
+						error: err,
 						public_message: 'Internal Error Has Occured'
 					})
 					t._generateError(baton)
@@ -174,9 +173,8 @@ module.exports = {
 		})
 	},
 
-	get_allUnlinkedVideos(res) {
+	get_allUnlinkedVideos(baton) {
 		var t = this;
-		var baton = t._getBaton("get_allUnlinkedVideos", null, res);
 
 		this._getAllUnlinkedVideos(baton, function(unlinked_videos) {
 			baton.json({
@@ -187,9 +185,8 @@ module.exports = {
 		})
 	},
 
-	get_allLinkedVides(res) {
+	get_allLinkedVides(baton) {
 		var t = this;
-		var baton = t._getBaton("get_allLinkedVides", null, res);
 
 		this._getAllLinkedVideos(baton, function(linked_videos) {
 			baton.json({
@@ -200,9 +197,8 @@ module.exports = {
 		})
 	},
 
-	get_allCompilationVideos(res) {
+	get_allCompilationVideos(baton) {
 		var t = this;
-		var baton = t._getBaton("get_allCompilationVideos", null, res);
 
 		this._getAllCompilationVideos(baton, function(comp_videos) {
 			baton.json({
@@ -213,9 +209,8 @@ module.exports = {
 		})
 	},
 
-	get_allLogos(res) {
+	get_allLogos(baton) {
 		var t = this;
-		var baton = t._getBaton("get_allLogos", null, res);
 
 		this._getAllLogos(baton, function(logos) {
 			baton.json({
@@ -226,9 +221,8 @@ module.exports = {
 		})
 	},
 
-	get_downloadYoutbeVideo(params, res) {
+	get_downloadYoutbeVideo(baton, params) {
 		var t = this;
-		var baton = t._getBaton("get_downloadYoutbeVideo", params, res);
 
 		function dataLoader(callback) {
 			t._getAllLinkedVideos(baton, function(linked_videos) {
@@ -298,9 +292,8 @@ module.exports = {
 		})
 	},
 
-	get_CreateCompilation(params, res) {
+	get_CreateCompilation(baton, params) {
 		var t = this;
-		var baton = t._getBaton("get_CreateCompilation", params, res);
 
 
 		function dataLoader(callback) {
@@ -497,9 +490,8 @@ module.exports = {
 		})
 	},
 
-	get_CompilationVideoStatus(params, res) {
+	get_CompilationVideoStatus(baton, params) {
 		var t = this
-		var baton = t._getBaton("get_CompilationVideoStatus", null, res);
 
 		params.compilation_id = params.compilation_id.toString()
 
@@ -516,13 +508,11 @@ module.exports = {
 	},
 
 	//download video
-	get_downloadCompilation(params, res) {
+	get_downloadCompilation(baton, params) {
 		var t = this
-		var baton = t._getBaton("get_CompilationVideo", null, res);
-
 		t._assertCompilationIdExists(baton, params.compilation_id, function(comp_path) {
-			
-			res.download(comp_path);
+
+			baton.download(comp_path);
 		})
 
 	},
@@ -689,6 +679,12 @@ module.exports = {
 			},
 			sendError: function(data) {
 				res.status(500).json(data)
+			},
+			download: function(data) {
+				var end_time = new Date()
+				this.duration = end_time.getTime() - this.start_time
+				console.log(this.methods[0] + " | " + this.duration)
+				this.res.status((this.requestType == "GET" ? 200 : 201)).download(data)
 			},
 			json: function(data) {
 				var end_time = new Date()
