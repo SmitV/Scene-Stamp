@@ -126,8 +126,8 @@ describe('tests', function() {
 	}
 
 	function createFakeBaton(params) {
-			return action._getBaton('testAction', params, fakeRes)
-		}
+		return action._getBaton('testAction', params, fakeRes)
+	}
 
 	beforeEach(function() {
 
@@ -276,11 +276,11 @@ describe('tests', function() {
 		nock.cleanAll()
 	})
 
-	it('check root', function(){
+	it('check root', function() {
 		expect(ROOT_DIR).to.equal('/home/ubuntu/')
 	})
 
-	context('validate for all requests', function(){
+	context('validate for all requests', function() {
 
 		var actionSpy;
 
@@ -308,7 +308,10 @@ describe('tests', function() {
 
 		it('should pass validation and call action', (done) => {
 			sucValidate()
-			sendRequest('getLinkedVideos',{},/*post=*/ false, {test_mode:true, auth_token:'kjl'}).end((err, res, body) => {
+			sendRequest('getLinkedVideos', {}, /*post=*/ false, {
+				test_mode: true,
+				auth_token: 'kjl'
+			}).end((err, res, body) => {
 				assertSuccess(res)
 				expect(actionSpy.called).is.true;
 				done()
@@ -316,9 +319,15 @@ describe('tests', function() {
 		})
 
 		it('should fail validation', (done) => {
-			var error = {id:101, error_message: 'InTest Error'}
+			var error = {
+				id: 101,
+				error_message: 'InTest Error'
+			}
 			failValidate(error)
-			sendRequest('getLinkedVideos',{},/*post=*/ false, {test_mode:true, auth_token:'kjl'}).end((err, res, body) => {
+			sendRequest('getLinkedVideos', {}, /*post=*/ false, {
+				test_mode: true,
+				auth_token: 'kjl'
+			}).end((err, res, body) => {
 				assertErrorMessage(res, error.error_message)
 				expect(actionSpy.called).is.false;
 				done()
@@ -520,7 +529,7 @@ describe('tests', function() {
 			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
-					assertSuccess(res,/*post=*/ true)
+					assertSuccess(res, /*post=*/ true)
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
 					done()
 				})
@@ -535,7 +544,7 @@ describe('tests', function() {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
-					assertSuccess(res,/*post=*/ true)
+					assertSuccess(res, /*post=*/ true)
 					done()
 				})
 			})
@@ -559,7 +568,7 @@ describe('tests', function() {
 						var taskFileContent = JSON.parse(mockFileSystemData['tasks.json'])
 						expect(taskFileContent[existingTimestampParams.compilation_id]).to.deep.equal(existingTaskContent[existingTimestampParams.compilation_id]);
 						expect(taskFileContent[content.compilation_id]).to.deep.equal(content[content.compilation_id]);
-						assertSuccess(res,/*post=*/ true)
+						assertSuccess(res, /*post=*/ true)
 						done()
 					})
 				})
@@ -686,7 +695,7 @@ describe('tests', function() {
 				}).end((err, res, body) => {
 					assertSuccess(res)
 					expect(res.body.completed).to.equal(false)
-					expect(res.body.percentage).to.equal(2/3);
+					expect(res.body.percentage).to.equal(2 / 3);
 					done()
 				})
 			})
