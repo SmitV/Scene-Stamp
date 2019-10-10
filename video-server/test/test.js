@@ -134,7 +134,7 @@ describe('tests', function() {
 		sandbox = sinon.createSandbox();
 
 
-		taskScript._resetCurrentTasks()
+		taskScript._resetCurrentEditingTask()
 		taskScript._resetCurrentDownloadTask();
 
 		//repress the console.log 
@@ -832,7 +832,7 @@ describe('tests', function() {
 					return !task.completed
 				})
 				expect(videoCutSpy.calledOnce).to.equal(true)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
+				expect(taskScript._getCurrentEditingTask()).to.equal(existingTimestampParams.compilation_id.toString())
 				expect(videoCutSpy.getCall(0).args).to.deep.equal([timestampTask.episode_id.toString() + '.mp4', existingTimestampParams.compilation_id.toString(), timestampTask.start_time, timestampTask.duration, tasks[existingTimestampParams.compilation_id].timestamps.indexOf(timestampTask)])
 				done()
 			})
@@ -848,7 +848,7 @@ describe('tests', function() {
 					return !task.completed
 				})
 				expect(videoLogoSpy.calledOnce).to.equal(true)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
+				expect(taskScript._getCurrentEditingTask()).to.equal(existingTimestampParams.compilation_id.toString())
 				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(), "test-brand-logo"])
 				done()
 			})
@@ -873,7 +873,7 @@ describe('tests', function() {
 
 			setUpTasksAndRunUpdateTasks(function(tasks) {
 				expect(videoCutSpy.calledOnce).to.equal(false)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id)).to.equal(false)
+				expect(taskScript._getCurrentEditingTask()).to.not.equal(existingTimestampParams.compilation_id.toString())
 				done()
 			})
 		})
@@ -891,7 +891,7 @@ describe('tests', function() {
 
 		it('should not run video cut on next incomplete task, when compilation creation currently running', function(done) {
 			setUpSpy();
-			taskScript._pushTask(existingTimestampParams.compilation_id.toString())
+			taskScript._setCurrentEditingTask(existingTimestampParams.compilation_id.toString())
 
 			setUpTasksAndRunUpdateTasks((tasks) => {
 				expect(videoCutSpy.calledOnce).to.equal(false)

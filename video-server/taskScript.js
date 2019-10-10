@@ -19,7 +19,7 @@ var VIDEO_CUT_FILE = 'video_cut.py'
 var VIDEO_LOGO_FILE = 'video_logo.py'
 var TEST_PYTHON_FILE = 'testPython.py'
 
-var currentTasks = []
+var currentEditingTask = null
 
 var SUB_TIMESTAMP_DURATION = 100
 
@@ -35,7 +35,7 @@ General Flow:
 	-in interval in server, the 'updateTasks' is called
 		-will read the tasks.json file ; if there are any new tasks, it will start creating the new comp video
 		-process to create the comp video:
-			0)the currentTasks var in this file will include the comp_id
+			0)the currentEditingTask var in this file will include the comp_id
 				-indicated that specified compilation video is being created
 			1)A timestamp is read form the comp_id in the tasks.json
 			2)The python script is called to append the timestamp(section with start time and duration) to the empty comp_video file
@@ -54,7 +54,7 @@ General Flow:
 
 module.exports = {
 
-	CURRENT_TASKS: currentTasks,
+	CURRENT_EDITING_TASK: currentEditingTask,
 
 	ROOT_DIR: ROOT_DIR,
 	VIDEO_CUT_FILE: VIDEO_CUT_FILE,
@@ -62,14 +62,14 @@ module.exports = {
 
 
 	//current tasks helper
-	_getCurrentTasks() {
-		return currentTasks
+	_getCurrentEditingTask() {
+		return currentEditingTask
 	},
-	_resetCurrentTasks() {
-		currentTasks = [];
+	_resetCurrentEditingTask() {
+		currentEditingTask = null;
 	},
-	_pushTask(compilation_id) {
-		currentTasks.push(compilation_id)
+	_setCurrentEditingTask(compilation_id) {
+		currentEditingTask = compilation_id
 	},
 
 	//current download task helper
@@ -137,7 +137,7 @@ module.exports = {
 				for (var i = 0; i < timestamps.length; i++) {
 					if (!timestamps[i].completed) {
 						var ts = timestamps[i]
-						t._pushTask(comp_id)
+						t._setCurrentEditingTask(comp_id)
 						console.log('compilation started for timestamp : ' + comp_id)
 						console.log()
 						t._callVideoCut(ts.episode_name, comp_id, ts.start_time, ts.duration, i)
@@ -150,7 +150,7 @@ module.exports = {
 		function checkBranding(tasks, comp_id, callback) {
 			if (tasks[comp_id].branding !== undefined) {
 				if (tasks[comp_id].branding.completed !== true) {
-					t._pushTask(comp_id)
+					t._setCurrentEditingTask(comp_id)
 					console.log('compilation started for logo : ' + comp_id)
 					console.log()
 					t._callVideoLogo(comp_id, tasks[comp_id].branding.logo)
@@ -172,14 +172,14 @@ module.exports = {
 		}
 
 		this._readTaskFile(function(tasks) {
-			var tasksNotCurrentlyRunning = Object.keys(tasks).filter(function(comp_id) {
-				return !currentTasks.includes(comp_id)
-			}).filter(function(task) {
-				return tasks[task].error == undefined
-			});
-			tasksNotCurrentlyRunning.forEach(function(comp_id) {
-				startTask(tasks, comp_id)
-			})
+			if(currentEditingTask === null){
+				var firstAvaliableCompilation = Object.keys(tasks).find(function(task) {
+					return tasks[task].error == undefined
+				});
+				if(firstAvaliableCompilation !== undefined){
+					startTask(tasks, firstAvaliableCompilation)
+				}
+			}
 		})
 	},
 
@@ -247,10 +247,12 @@ module.exports = {
 	_updateRemoveCompFromTask(comp_id) {
 		var t = this;
 		t._readTaskFile(function(tasks) {
-			delete tasks[comp_id]
-			t._updateTaskFile(tasks, function() {
-				console.log("Completed Compilation Creation : " + comp_id)
-			})
+			if(tasks[comp_id]){
+				delete tasks[comp_id]
+				t._updateTaskFile(tasks, function() {
+					console.log("Completed Compilation Creation : " + comp_id)
+				})
+			}
 		})
 	},
 
@@ -272,7 +274,7 @@ module.exports = {
 		t._readTaskFile(function(tasks) {
 			tasks[comp_id].error = err
 			t._updateTaskFile(tasks, function() {
-				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
+				currentEditingTask = null
 			})
 		})
 	},
@@ -358,7 +360,7 @@ module.exports = {
 
 		function onExit() {
 			t._updateTimestampToComplete(comp_id, indexOfTimestamp, function() {
-				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
+				currentEditingTask = null
 			})
 		}
 
@@ -383,7 +385,7 @@ module.exports = {
 
 		function onExit() {
 			t._updateBrandingToComplete(comp_id, logo_name, function() {
-				currentTasks.splice(currentTasks.indexOf(comp_id), 1)
+				currentEditingTask = null
 			})
 		}
 
