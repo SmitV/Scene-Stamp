@@ -756,11 +756,30 @@ describe('tests', function() {
 		}
 
 		function setUpExistingTasks(callback) {
-			tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
-				mockFileSystemData['tasks.json'] = JSON.stringify(content)
-				mockFs(mockFileSystemData)
-				callback(content)
-			})
+
+			if (Array.isArray(existingTimestampParams)) {
+				var result = {}
+				existingTimestampParams.forEach(timestampParams => {
+					tasksForCompilation(JSON.parse(JSON.stringify(timestampParams)), function(content) {
+						Object.keys(content).forEach(con => {
+							result[con] = content[con]
+							universalCompilationId += 1
+						})
+					})
+					if (existingTimestampParams.indexOf(timestampParams) == existingTimestampParams.length - 1) {
+						mockFileSystemData['tasks.json'] = JSON.stringify(result)
+						mockFs(mockFileSystemData)
+						callback(result)
+						return
+					}
+				})
+			} else {
+				tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+					mockFileSystemData['tasks.json'] = JSON.stringify(content)
+					mockFs(mockFileSystemData)
+					callback(content)
+				})
+			}
 		}
 
 		function setUpExistingDownloadTasks(callback) {
@@ -814,6 +833,7 @@ describe('tests', function() {
 
 			childSpawnEmitter = new events.EventEmitter();
 
+
 			existingTimestampParams.compilation_id = universalCompilationId
 
 		})
@@ -838,18 +858,43 @@ describe('tests', function() {
 			})
 		})
 
-		it('should run video logo on next incomplete task', function(done) {
+		it('should run video logo on next incomplete task, and not run next editing task for another compilation', function(done) {
 			setUpSpy();
 			existingTimestampParams.timestamps[1].completed = true
 			existingTimestampParams.logo = "test-brand-logo"
 
+			//mock for new compilation request
+			anotherTimestampParam = {
+				compilation_name: "InTest Existing Compilation",
+				timestamps: [{
+					episode_id: 1,
+					start_time: 2,
+					duration: 13,
+					timestamp_id: 1
+				}, {
+					episode_id: 1,
+					start_time: 10,
+					duration: 20,
+					timestamp_id: 1
+				}]
+			}
+			existingTimestampParams = [existingTimestampParams, anotherTimestampParam]
+
+			var comp_id_1 = universalCompilationId
+			var comp_id_2 = universalCompilationId+ 1
+
+				existingTimestampParams[0].compilation_id = comp_id_1
+			existingTimestampParams[1].compilation_id = comp_id_2
+
 			setUpTasksAndRunUpdateTasks((tasks) => {
-				var timestampTask = tasks[existingTimestampParams.compilation_id].timestamps.find(function(task) {
+				var timestampTask = tasks[comp_id_1].timestamps.find(function(task) {
 					return !task.completed
 				})
 				expect(videoLogoSpy.calledOnce).to.equal(true)
-				expect(taskScript._getCurrentEditingTask()).to.equal(existingTimestampParams.compilation_id.toString())
-				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(), "test-brand-logo"])
+				expect(taskScript._getCurrentEditingTask()).to.equal(comp_id_1.toString())
+				expect(videoLogoSpy.getCall(0).args).to.deep.equal([comp_id_1.toString(), "test-brand-logo"])
+
+				expect(JSON.parse(mockFileSystemData['tasks.json'])[comp_id_2]).to.not.equal(undefined)
 				done()
 			})
 		})
