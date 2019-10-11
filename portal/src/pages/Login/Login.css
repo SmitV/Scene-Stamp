@@ -1,0 +1,10 @@
+.Modal{
+	position: fixed;
+	top:50%;
+	left:45%;
+}
+
+.title {
+	font-size: x-large;
+	color: white;
+}

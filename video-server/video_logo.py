@@ -1,4 +1,7 @@
 from moviepy.editor import *
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip 
+from moviepy.video.VideoClip import ImageClip
 from os import path
 import sys, getopt
 import random
@@ -33,7 +36,7 @@ logo = (ImageClip(logo_path)
           .set_pos(("right","top")))
 
 final = CompositeVideoClip([video, logo])
-final.write_videofile(randomFileNumber+'.mp4', temp_audiofile=randomFileNumber+"-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
+final.write_videofile(randomFileNumber+'.mp4',temp_audiofile=randomFileNumber+"-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
 printAndFlush('Finish compilation logo composite')
 os.remove(compilation_path)
 printAndFlush('removing old file compilation_path')

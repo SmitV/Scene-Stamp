@@ -1,0 +1,39 @@
+.timestamp {
+	background: white;
+	width:500px;
+	border-radius: 25px;
+	height: fit-content;
+}
+
+.inner {
+	padding:2% 0% 2%;
+	margin:5%;
+	height: fit-content;
+}
+
+.episodeName {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.start_time {
+	font-style: italic;
+}
+
+.attributes {
+    bottom: 0;
+	display:flex;
+}
+
+.attribute {
+	margin-right:2%;
+	padding:1px 5px 1px;
+	text-align: center;
+	color:white;
+	border-radius: 25px;
+}
+
+.attribute-text {
+	white-space: nowrap;
+}

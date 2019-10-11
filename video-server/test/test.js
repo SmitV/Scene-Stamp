@@ -13,6 +13,7 @@ var nock = require('nock')
 var action = require('../action')
 var taskScript = require('../taskScript')
 var cred = require('../credentials.js')
+var auth = require('../auth')
 
 sinon.stub(taskScript, 'initialTests').callsFake(callback => {
 	callback()
@@ -39,16 +40,23 @@ describe('tests', function() {
 	}
 
 
-	function sendRequest(path, params, post) {
-		if (post) {
-			return chai.request(server).post('/' + path)
-				.set('content-type', 'application/json')
-				.send(params)
-		} else {
-			return chai.request(server).get('/' + path + '?' + Object.keys(params).map(attr => {
-				return attr + '=' + params[attr]
-			}).join('&')).send()
+	function sendRequest(path, params, post, headers) {
+
+		var addHeaders = req => {
+			if (headers !== undefined) {
+				Object.keys(headers).forEach(head => {
+					req.set(head, headers[head])
+				})
+			}
+			return req
 		}
+
+		return (post ?
+			addHeaders(chai.request(server).post('/' + path).set('content-type', 'application/json')).send(params) :
+			addHeaders(chai.request(server).get('/' + path + '?' + Object.keys(params).map(attr => {
+				return attr + '=' + params[attr]
+			}).join('&'))).send())
+
 	}
 
 
@@ -69,10 +77,6 @@ describe('tests', function() {
 		BRANDING_FOLDER,
 		SUB_TIMESTAMP_DURATION
 	} = taskScript.getAllDirectories();
-
-	function sucsessResponse(response) {
-		expect(response.error_message).to.equal(undefined);
-	}
 
 	function createSubTimestamps(ts, callback) {
 		var subTimestamps = []
@@ -121,12 +125,16 @@ describe('tests', function() {
 		})
 	}
 
+	function createFakeBaton(params) {
+		return action._getBaton('testAction', params, fakeRes)
+	}
+
 	beforeEach(function() {
 
 		sandbox = sinon.createSandbox();
 
 
-		taskScript._resetCurrentTasks()
+		taskScript._resetCurrentEditingTask()
 		taskScript._resetCurrentDownloadTask();
 
 		//repress the console.log 
@@ -151,13 +159,6 @@ describe('tests', function() {
 			body: {},
 			get(attr) {
 				return this.headers[attr]
-			}
-		}
-
-		fakeBaton = {
-			methods: [],
-			addMethod: function(method) {
-				this.methods.push(method)
 			}
 		}
 
@@ -207,6 +208,9 @@ describe('tests', function() {
 			data.compilation_id = universalCompilationId
 			return data
 		}
+
+		//timestamp server validate
+		sandbox.stub(auth, '_validateRequest').callsFake((baton, req, callback) => callback())
 
 		//episode data
 		nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(200, mockEpisodeData)
@@ -272,8 +276,63 @@ describe('tests', function() {
 		nock.cleanAll()
 	})
 
-	it('check root', function(){
+	it('check root', function() {
 		expect(ROOT_DIR).to.equal('/home/ubuntu/')
+	})
+
+	context('validate for all requests', function() {
+
+		var actionSpy;
+
+		var sucValidate = () => {
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(200, {})
+		}
+
+		var failValidate = (err) => {
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(401, err)
+		}
+
+		beforeEach(() => {
+
+			fakeBaton = createFakeBaton('getLinkedVideos')
+
+			actionSpy = sinon.stub()
+			//restore mock for _validateRequest
+			auth._validateRequest.restore()
+
+			sandbox.stub(action, 'get_allLinkedVides').callsFake((fakeBaton, params, res) => {
+				actionSpy();
+				fakeBaton.json('done')
+			})
+		})
+
+		it('should pass validation and call action', (done) => {
+			sucValidate()
+			sendRequest('getLinkedVideos', {}, /*post=*/ false, {
+				test_mode: true,
+				auth_token: 'kjl'
+			}).end((err, res, body) => {
+				assertSuccess(res)
+				expect(actionSpy.called).is.true;
+				done()
+			})
+		})
+
+		it('should fail validation', (done) => {
+			var error = {
+				id: 101,
+				error_message: 'InTest Error'
+			}
+			failValidate(error)
+			sendRequest('getLinkedVideos', {}, /*post=*/ false, {
+				test_mode: true,
+				auth_token: 'kjl'
+			}).end((err, res, body) => {
+				assertErrorMessage(res, error.error_message)
+				expect(actionSpy.called).is.false;
+				done()
+			})
+		})
 	})
 
 	context('file sytem api', function() {
@@ -351,6 +410,7 @@ describe('tests', function() {
 				error_message: 'InTest Timestamp Error'
 			};
 			nock.cleanAll()
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/validate').reply(200, {})
 			nock('https://' + cred.TIMESTAMP_SERVER_URL).get('/getEpisodeData').reply(500, error)
 			var unlinkedVideoName = Object.keys(mockFileSystemData[UNLINKED_FOLDER])[0]
 			var params = {
@@ -467,10 +527,9 @@ describe('tests', function() {
 			var params = existingTimestampParams
 
 			sendRequest('createCompilation', params, /*post=*/ true).end((err, res, body) => {
-				assertSuccess(res)
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
-					sucsessResponse(res)
+					assertSuccess(res, /*post=*/ true)
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
 					done()
 				})
@@ -485,7 +544,7 @@ describe('tests', function() {
 				params.compilation_id = universalCompilationId
 				tasksForCompilation(params, (content) => {
 					expect(JSON.parse(mockFileSystemData['tasks.json'])[params.compilation_id]).to.deep.equal(content[params.compilation_id]);
-					sucsessResponse(res)
+					assertSuccess(res, /*post=*/ true)
 					done()
 				})
 			})
@@ -509,7 +568,7 @@ describe('tests', function() {
 						var taskFileContent = JSON.parse(mockFileSystemData['tasks.json'])
 						expect(taskFileContent[existingTimestampParams.compilation_id]).to.deep.equal(existingTaskContent[existingTimestampParams.compilation_id]);
 						expect(taskFileContent[content.compilation_id]).to.deep.equal(content[content.compilation_id]);
-						sucsessResponse(res)
+						assertSuccess(res, /*post=*/ true)
 						done()
 					})
 				})
@@ -636,7 +695,7 @@ describe('tests', function() {
 				}).end((err, res, body) => {
 					assertSuccess(res)
 					expect(res.body.completed).to.equal(false)
-					expect(res.body.percentage).to.equal(2/3);
+					expect(res.body.percentage).to.equal(2 / 3);
 					done()
 				})
 			})
@@ -697,11 +756,30 @@ describe('tests', function() {
 		}
 
 		function setUpExistingTasks(callback) {
-			tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
-				mockFileSystemData['tasks.json'] = JSON.stringify(content)
-				mockFs(mockFileSystemData)
-				callback(content)
-			})
+
+			if (Array.isArray(existingTimestampParams)) {
+				var result = {}
+				existingTimestampParams.forEach(timestampParams => {
+					tasksForCompilation(JSON.parse(JSON.stringify(timestampParams)), function(content) {
+						Object.keys(content).forEach(con => {
+							result[con] = content[con]
+							universalCompilationId += 1
+						})
+					})
+					if (existingTimestampParams.indexOf(timestampParams) == existingTimestampParams.length - 1) {
+						mockFileSystemData['tasks.json'] = JSON.stringify(result)
+						mockFs(mockFileSystemData)
+						callback(result)
+						return
+					}
+				})
+			} else {
+				tasksForCompilation(JSON.parse(JSON.stringify(existingTimestampParams)), function(content) {
+					mockFileSystemData['tasks.json'] = JSON.stringify(content)
+					mockFs(mockFileSystemData)
+					callback(content)
+				})
+			}
 		}
 
 		function setUpExistingDownloadTasks(callback) {
@@ -755,6 +833,7 @@ describe('tests', function() {
 
 			childSpawnEmitter = new events.EventEmitter();
 
+
 			existingTimestampParams.compilation_id = universalCompilationId
 
 		})
@@ -773,24 +852,49 @@ describe('tests', function() {
 					return !task.completed
 				})
 				expect(videoCutSpy.calledOnce).to.equal(true)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
+				expect(taskScript._getCurrentEditingTask()).to.equal(existingTimestampParams.compilation_id.toString())
 				expect(videoCutSpy.getCall(0).args).to.deep.equal([timestampTask.episode_id.toString() + '.mp4', existingTimestampParams.compilation_id.toString(), timestampTask.start_time, timestampTask.duration, tasks[existingTimestampParams.compilation_id].timestamps.indexOf(timestampTask)])
 				done()
 			})
 		})
 
-		it('should run video logo on next incomplete task', function(done) {
+		it('should run video logo on next incomplete task, and not run next editing task for another compilation', function(done) {
 			setUpSpy();
 			existingTimestampParams.timestamps[1].completed = true
 			existingTimestampParams.logo = "test-brand-logo"
 
+			//mock for new compilation request
+			anotherTimestampParam = {
+				compilation_name: "InTest Existing Compilation",
+				timestamps: [{
+					episode_id: 1,
+					start_time: 2,
+					duration: 13,
+					timestamp_id: 1
+				}, {
+					episode_id: 1,
+					start_time: 10,
+					duration: 20,
+					timestamp_id: 1
+				}]
+			}
+			existingTimestampParams = [existingTimestampParams, anotherTimestampParam]
+
+			var comp_id_1 = universalCompilationId
+			var comp_id_2 = universalCompilationId+ 1
+
+				existingTimestampParams[0].compilation_id = comp_id_1
+			existingTimestampParams[1].compilation_id = comp_id_2
+
 			setUpTasksAndRunUpdateTasks((tasks) => {
-				var timestampTask = tasks[existingTimestampParams.compilation_id].timestamps.find(function(task) {
+				var timestampTask = tasks[comp_id_1].timestamps.find(function(task) {
 					return !task.completed
 				})
 				expect(videoLogoSpy.calledOnce).to.equal(true)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id.toString())).to.equal(true)
-				expect(videoLogoSpy.getCall(0).args).to.deep.equal([existingTimestampParams.compilation_id.toString(), "test-brand-logo"])
+				expect(taskScript._getCurrentEditingTask()).to.equal(comp_id_1.toString())
+				expect(videoLogoSpy.getCall(0).args).to.deep.equal([comp_id_1.toString(), "test-brand-logo"])
+
+				expect(JSON.parse(mockFileSystemData['tasks.json'])[comp_id_2]).to.not.equal(undefined)
 				done()
 			})
 		})
@@ -814,7 +918,7 @@ describe('tests', function() {
 
 			setUpTasksAndRunUpdateTasks(function(tasks) {
 				expect(videoCutSpy.calledOnce).to.equal(false)
-				expect(taskScript._getCurrentTasks().includes(existingTimestampParams.compilation_id)).to.equal(false)
+				expect(taskScript._getCurrentEditingTask()).to.not.equal(existingTimestampParams.compilation_id.toString())
 				done()
 			})
 		})
@@ -832,7 +936,7 @@ describe('tests', function() {
 
 		it('should not run video cut on next incomplete task, when compilation creation currently running', function(done) {
 			setUpSpy();
-			taskScript._pushTask(existingTimestampParams.compilation_id.toString())
+			taskScript._setCurrentEditingTask(existingTimestampParams.compilation_id.toString())
 
 			setUpTasksAndRunUpdateTasks((tasks) => {
 				expect(videoCutSpy.calledOnce).to.equal(false)

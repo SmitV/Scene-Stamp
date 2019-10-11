@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 
 var action = require('./action.js')
 var taskScript = require('./taskScript.js')
+var auth = require('./auth')
 
 var app = express();
 app.use(bodyParser.json());
@@ -14,55 +15,37 @@ app.use(bodyParser.urlencoded({
 var endpoints = [{
 		//will rename episode to new  
 		url: 'linkToEpisode',
-		action: function(req, res) {
-			action.get_linkVideoToEpisode(req.query, res);
-		}
+		action:'get_linkVideoToEpisode'
 	}, {
 		url: 'getUnlinkedVideos',
-		action: function(req, res) {
-			action.get_allUnlinkedVideos(res);
-		}
+		action: 'get_allUnlinkedVideos'
 	}, {
 		url: 'getLinkedVideos',
-		action: function(req, res) {
-			action.get_allLinkedVides(res);
-		}
+		action: 'get_allLinkedVides'
 	}, 
 	 {
 		url: 'getLogos',
-		action: function(req, res) {
-			action.get_allLogos(res);
-		}
+		action: 'get_allLogos'
 	},{
 		url: 'createCompilation',
-		action: function(req, res) {
-			action.get_CreateCompilation(req.body, res);
-		},
+		action: 'get_CreateCompilation',
 		post: true
 	}, {
 		//gets al list of all of the compilation video names 
 		url: 'getCompilationVideos',
-		action: function(req, res) {
-			action.get_allCompilationVideos(res);
-		}
+		action: 'get_allCompilationVideos'
 	}, {
 		//gets status of a compilation video 
 		url: 'getCompilationStatus',
-		action: function(req, res) {
-		action.get_CompilationVideoStatus(req.query, res);
-		}
+		action:'get_CompilationVideoStatus'
 	}, {
 		//will call res.download to the compilation video file 
 		url: 'downloadCompilation',
-		action: function(req, res) {
-			action.get_downloadCompilation(req.query, res);
-		}
+		action: 'get_downloadCompilation'
 	},
 	{
 		url: 'downloadYoutubeVideo',
-		action: function(req, res){
-			action.get_downloadYoutbeVideo(req.query, res)
-		}
+		action:'get_downloadYoutbeVideo'
 	}
 
 ]
@@ -77,15 +60,20 @@ app.all('*', function(req, res, next) {
 
 
 endpoints.forEach(function(endpoint) {
+
+	var endpointFunction = function(req, res) {
+		var params = (endpoint.post ? req.body : req.query)
+		var baton = action._getBaton(endpoint.url, params, res)
+		if (endpoint.post) baton.requestType = 'POST'
+		auth._validateRequest(baton, req, function() {
+			action[endpoint.action](baton, params, res);
+		})
+	}
 	if (endpoint.post) {
-		app.post('/' + endpoint.url, function(req, res) {
-			endpoint.action(req, res);
-		});
+		app.post('/' + endpoint.url, endpointFunction);
 		return
 	}
-	app.get('/' + endpoint.url, function(req, res) {
-		endpoint.action(req, res);
-	});
+	app.get('/' + endpoint.url, endpointFunction);
 
 })
 

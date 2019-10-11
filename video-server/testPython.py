@@ -3,7 +3,10 @@ from os import path
 import sys, getopt
 import random
 import youtube_dl
-from moviepy.editor import *
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.concatenate import concatenate_videoclips
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip 
+from moviepy.video.VideoClip import ImageClip
 
 
 # Tests to ensure python can run on server

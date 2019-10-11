@@ -1,8 +1,10 @@
-from moviepy.editor import *
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.concatenate import concatenate_videoclips
 from os import path
 import sys, getopt
 import random
 import json
+import os
 
 
 
@@ -38,7 +40,7 @@ else:
 	video = VideoFileClip(file).subclip(start_time,start_time + duration)
 
 printAndFlush('Writing video file')	
-video.write_videofile(randomFileNumber+'.mp4', temp_audiofile=randomFileNumber+"-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
+video.write_videofile(randomFileNumber+'.mp4',temp_audiofile=randomFileNumber+"-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac", logger=None)
 if path.exists(compilation):
 	printAndFlush('Removing old compilation file')
 	os.remove(compilation)
