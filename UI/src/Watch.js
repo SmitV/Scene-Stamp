@@ -314,6 +314,7 @@ export default class Watch extends React.Component {
   }
   nextEpisodePage(entry, epData) {
     epData.push(entry);
+    console.log(entry);
     fetch("http://ec2-18-224-0-88.us-east-2.compute.amazonaws.com:8081/getUnlinkedVideos")
       .then(resp => resp.json())
       .then(data => this.setState({episodeData: epData, episodeScreen: false, unlinkedVids: data.videos, newlyCreatedEpisode: entry.episode_id}));
@@ -357,7 +358,7 @@ export default class Watch extends React.Component {
           season_num: "",
           episode_name: "",
           air_date: "",
-          episodeScreen: false,
+          modalOpen: false,
         })
       )
       .catch(err => console.log(err));
@@ -368,7 +369,8 @@ export default class Watch extends React.Component {
   handleNewCategory(e) {
     this.setState({categoryModal: true});
   }
-  handleRadio(event) {
+  handleRadio(event, element) {
+    console.log(event.target.value);
     this.setState({
       radioSelected: event.target.value
     });
@@ -555,8 +557,8 @@ export default class Watch extends React.Component {
                           <input
                             type="radio"
                             value={element}
-                            checked={this.state.radioSelected === "small"}
-                            onChange={this.handleRadio}
+                            checked={this.state.radioSelected === element}
+                            onChange={(e) => this.handleRadio(e, element)}
                           />
                           {element}
                         </label>
