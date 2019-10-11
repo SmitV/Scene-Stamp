@@ -1,11 +1,13 @@
 var express = require('express');
 const bodyParser = require('body-parser');
+var cors = require('cors')
 
 var action = require('./action.js')
 var taskScript = require('./taskScript.js')
 var auth = require('./auth')
 
 var app = express();
+app.options('*', cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: false
