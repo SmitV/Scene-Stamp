@@ -19,7 +19,7 @@ module.exports = {
 
 		var options = {
 			hostname: cred.TIMESTAMP_SERVER_URL,
-			path: '/validate',
+			path: '/validate?action='+baton.methods[0],
 			method: 'GET',
 			port: 443,
 			headers: createHeaders()
