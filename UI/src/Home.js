@@ -22,6 +22,7 @@ export default class Home extends React.Component {
       tsMap: {},
       activeClip: -1,
       inputText: "",
+      awsUrl: "http://ec2-18-221-3-92.us-east-2.compute.amazonaws.com:8081/",
     };
     this.handleInputText = this.handleInputText.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -170,21 +171,40 @@ export default class Home extends React.Component {
     } else if(this.state.picked_scenes.length == 0) {
       alert("Please add more scenes!");
     } else {
-      let data = this.createCompilationData();
-      fetch("https://scene-stamp-server.herokuapp.com/createCompilation", {
+      let comp_data = this.createCompilationData();
+      fetch(this.state.awsUrl + 'createCompilation', {
         method: 'post',
-        body: JSON.stringify(data)
-      })
-      .then(resp => resp.json())
-      .then(data => console.log(data));
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(comp_data)
+      }).then(res => res.json())
+        .then(data => this.pollStatus(data));
     }
+  }
+  pollStatus(data) {
+    const id = data.compilation_id;
+    this.interval = setInterval(() => {
+      fetch(this.state.awsUrl + "getCompilationStatus?compilation_id=" + id)
+        .then(res => {
+          return res.json();
+        })
+        .then(res => console.log(res));
+    }, 2000);
+    // res => {
+    //   this.setState({
+    //     vid_status: res.percentage
+    //   });
+    // }
   }
   createCompilationData() {
     let data = this.state.picked_scenes;
     let ret = {};
     let timestamps = [];
+    debugger;
     for(let i = 0; i < data.length; i++) {
-      timestamps.push({episode_id: data[i].episode_id, start_time: data[i].start, duration: data[i].duration});
+      timestamps.push({episode_id: data[i].episode_id, start_time: data[i].start, duration: data[i].duration, timestamp_id: data[i].timestamp_id});
     }
     ret["compilation_name"] = this.state.inputText;
     ret["timestamps"] = timestamps;
