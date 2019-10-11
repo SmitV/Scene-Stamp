@@ -285,11 +285,11 @@ describe('tests', function() {
 		var actionSpy;
 
 		var sucValidate = () => {
-			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(200, {})
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate?action=getLinkedVideos').reply(200, {})
 		}
 
 		var failValidate = (err) => {
-			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate').reply(401, err)
+			nock('https://' + cred.TIMESTAMP_SERVER_URL).matchHeader('test_mode', value => true).matchHeader('auth_token', value => true).get('/validate?action=getLinkedVideos').reply(401, err)
 		}
 
 		beforeEach(() => {

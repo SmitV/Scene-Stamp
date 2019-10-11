@@ -698,7 +698,6 @@ module.exports = {
 		}
 	},
 
-
 	_generateError(baton, keepErrorMessage) {
 		var printableBaton = {}
 		baton.duration = new Date().getTime() - baton.start_time
