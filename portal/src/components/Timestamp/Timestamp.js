@@ -10,7 +10,9 @@ import './Timestamp.css'
 const mapStateToProps = state => ({
   episode_data: state.timestamp.episode_data,
   character_data : state.timestamp.character_data,
-  category_data: state.timestamp.category_data
+  category_data: state.timestamp.category_data,
+
+  linked_videos:state.video.linked_videos
 })
 
 class Timestamp extends React.Component {
@@ -50,19 +52,29 @@ class Timestamp extends React.Component {
       date.setSeconds(this.props.timestamp.start_time)
       var time = date.toTimeString().slice(3,8);
 
+      var isEpisodeLinkedOnServer = this.props.linked_videos.find(lv => lv === episode.episode_id) !== undefined
 
-      return (
-        <div className='timestamp' >
-          <div className='inner'>
-            <div className='episodeName'>
-              {episode.episode_name}
+      var linkedStatus = (this.props.linked_videos.find(lv => lv === episode.episode_id) !== undefined ? <div className='linkedStatus' style={{backgroundColor:ACCENT_2}}> ON SERVER</div> : null)
+
+      var createTimestamp = () => {
+        return <div className='timestamp'>
+        <div className='inner'>
+            <div className='timestamp_title'>
+              <div className='episodeName'>
+                {episode.episode_name}
+              </div>
+               {linkedStatus}
             </div>
             <span className='start_time'>{time}</span>
              <div className='attributes'>
               {characters}{categories}
             </div>
           </div>
-        </div>)
+          </div>
+      }
+
+
+      return (createTimestamp())
   }
 }
 

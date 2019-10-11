@@ -15,7 +15,7 @@ export var login = (dispatch, data, onSucsess, onFailure) => {
 
 	httpsCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/login",
+		"/login",
 		options,
 		onSucsess,
 		onFailure
@@ -25,7 +25,7 @@ export var login = (dispatch, data, onSucsess, onFailure) => {
 export var getCompilationData = (dispatch, onSucsess, onFailure) => {
 	timestampServerCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/getCompilationData",
+		"/getCompilationData",
 		onSucsess,
 		onFailure
 	);
@@ -34,7 +34,7 @@ export var getCompilationData = (dispatch, onSucsess, onFailure) => {
 export var getTimestampData = (dispatch, onSucsess, onFailure) => {
 	timestampServerCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/getTimestampData",
+		"/getTimestampData",
 		onSucsess,
 		onFailure
 	);
@@ -43,7 +43,7 @@ export var getTimestampData = (dispatch, onSucsess, onFailure) => {
 export var getEpisodeData = (dispatch, onSucsess, onFailure) => {
 	timestampServerCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/getEpisodeData",
+		"/getEpisodeData",
 		onSucsess,
 		onFailure
 	);
@@ -52,7 +52,7 @@ export var getEpisodeData = (dispatch, onSucsess, onFailure) => {
 export var getCharacterData = (dispatch, onSucsess, onFailure) => {
 	timestampServerCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/getCharacterData",
+		"/getCharacterData",
 		onSucsess,
 		onFailure
 	);
@@ -61,13 +61,13 @@ export var getCharacterData = (dispatch, onSucsess, onFailure) => {
 export var getCategoryData = (dispatch, onSucsess, onFailure) => {
 	timestampServerCall(
 		dispatch,
-		TIMESTAMP_SERVER_URL + "/getCategoryData",
+		"/getCategoryData",
 		onSucsess,
 		onFailure
 	);
 };
 
-var timestampServerCall = (dispatch, url, onSucsess, onFailure) => {
+var timestampServerCall = (dispatch, path, onSucsess, onFailure) => {
 	var options = {
 		headers: {
 			test_mode: true,
@@ -75,5 +75,5 @@ var timestampServerCall = (dispatch, url, onSucsess, onFailure) => {
 		}
 	};
 
-	httpsCall(dispatch, url, options, onSucsess, onFailure);
+	httpsCall(dispatch, TIMESTAMP_SERVER_URL + path, options, onSucsess, onFailure);
 };

@@ -6,9 +6,6 @@ import store from "./store"
 
 import {PRIMARY} from "./color-scheme"
 
-//Components
-import Header from "./components/Header/Header"
-
 //Pages
 import Page from "./pages/Page"
 import Home from "./pages/Home/Home";
@@ -23,9 +20,8 @@ class App extends React.Component {
 
     return (
       <Provider store={store}>
-        <div className="App" style={{backgroundColor:PRIMARY }}>
+        <div className="App">
           <Router>
-            <Header />
             <Page  path="/home" component={Home} />
             <Route path="/login" component={Login} />
           </Router>

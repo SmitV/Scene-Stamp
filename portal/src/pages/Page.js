@@ -3,7 +3,11 @@ import {Route, Redirect } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import {PRIMARY} from '../color-scheme'
 import './Page.css'
+
+//Components
+import Header from "../components/Header/Header"
 
 //redux 
 import {connect} from "react-redux"
@@ -32,8 +36,9 @@ class Page extends React.Component {
 
     return (
 
-      <div >
-        <div className="Page">
+      <div className="Page" style={{backgroundColor:PRIMARY }}>
+      <Header />
+        <div className='content'>
          <ToastContainer autoClose={3000}/>
         {this.props.auth_token !== null ? //null means no auth token found  
           <Route exact path={this.props.path} component={this.props.component} />

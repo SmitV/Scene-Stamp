@@ -6,6 +6,9 @@ export const GET_EPISODE_DATA = 'GET_EPISODE_DATA'
 export const GET_CHARACTER_DATA = 'GET_CHARACTER_DATA'
 export const GET_CATEGORY_DATA = 'GET_CATEGORY_DATA'
 
+//video server 
+export const GET_LINKED_VIDEOS = "GET_LINKED_VIDEOS"
+
 // authenticate actions
 export const GET_LOCAL_AUTH_TOKEN = "GET_LOCAL_AUTH_TOKEN"
 export const LOGIN_USER = "LOGIN_USER"

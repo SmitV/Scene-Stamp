@@ -43,7 +43,7 @@ export class Header extends React.Component {
     var tabs = [];
     this.state.tabs.forEach((tab, index) => {
       tabs.push( 
-        <div key={index} >
+        <div className='header' key={index} >
             <Link to={tab.path}>{tab.text}</Link>
         </div>
         )
@@ -52,7 +52,7 @@ export class Header extends React.Component {
     this.state.actions.forEach((action, index)=>{
       tabs.push( 
         <div key={this.state.tabs.length + index} onClick={action.action.bind(this)}>
-            <div className='actionHeader'>{action.text}</div>
+            <div className='header'>{action.text}</div>
         </div>
         )
     })

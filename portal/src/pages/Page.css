@@ -1,4 +1,14 @@
 .Page{
-	margin:2%;
+	position: absolute;
+	top:2%;
+	bottom:2%;
+	min-height: 100%;
+	height: fill-content;
+	width:100%;
+}
+
+.content {
+	padding-left:2%;
+	padding-right:2%;
 	height: 100%;
 }
