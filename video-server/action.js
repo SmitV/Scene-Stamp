@@ -584,9 +584,14 @@ module.exports = {
 			port: 443
 		}
 
+		var chunks = ''
 		var req = https.request(options, function(res) {
 			res.on('data', function(data) {
-				var parsedData = JSON.parse(Buffer.from(data).toString());
+				chunks += data
+			});
+
+			res.on('end', function(){
+				var parsedData = JSON.parse(Buffer.from(chunks).toString());
 				if (res.statusCode == 200) {
 					callback(parsedData)
 				} else {
@@ -594,7 +599,7 @@ module.exports = {
 					baton.throwError(true /*keepErrorMessage*/ )
 					return
 				}
-			});
+			})
 		}).on('error', function(err) {
 			baton.setError({
 				timestamp_server_error: err.toString(),
@@ -619,9 +624,15 @@ module.exports = {
 			},
 			port: 443
 		}
+		var chunks = ''
 		var req = https.request(options, function(res) {
-			res.on('data', function(data) {
-				var parsedData = JSON.parse(Buffer.from(data).toString());
+
+			res.on('data', function(data){
+				chunks += data
+			})
+
+			res.on('end', function(data) {
+				var parsedData = JSON.parse(Buffer.from(chunks).toString());
 				if (res.statusCode == 201) {
 					callback(parsedData)
 				} else {
