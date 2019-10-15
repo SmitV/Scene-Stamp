@@ -53,6 +53,7 @@
   border-radius: 2px;
   font-weight: bold;
   font-size: 14px;
+  width: 71px;
 }
 
 .picked-header button:hover {
@@ -78,7 +79,7 @@
   border-radius: 5px;
   background-color: #2185d0;
   color: white;
-  border:none;
+  border: none;
 }
 
 .scenes-btn:hover {
@@ -145,7 +146,7 @@
 }
 
 .scene-start-time span {
-  display:inline-block;
+  display: inline-block;
   margin-right: 4px;
 }
 
@@ -155,4 +156,17 @@
 
 .watch-modal-episodes li {
   list-style: none;
+}
+
+.w3-light-grey {
+  height: 15px;
+  width: 99.5%;
+  background: #b9b7b7;
+  margin-bottom: 0.3rem;
+}
+
+.w3-green {
+  background: green;
+  width: 0%;
+  height: inherit;
 }
