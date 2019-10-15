@@ -1,42 +1,35 @@
-.navBarHeaders{
-  width: 2rem;
-}
 
 
 .nav-container {
   height: 75px;
   width: 100%;
-  margin: 0;
+  margin-left:1rem 5rem 0rem;
   color: white;
 }
 
-.nav-container > div {
-  line-height: 75px;
-}
 
-.nav-container > div:first-child {
+.title {
   float: left;
   font-weight: bold;
   margin-left: 2rem;
 }
 
-.nav-container > div:last-child {
-  float: right;
-  margin-right: 2rem;
+.navBarHeaders{
+  display:flex;
+  float:right;
+  height:fill;
 }
 
-.nav-container > div:last-child > div {
-  float: left;
-  width: 100px;
-  text-align: center;
+.header{
+  padding: 1px 5px 1px;
+  top:30px;
+  margin-left:15px;
+  height:fill;
+  border-radius: 25px;
 }
 
-.nav-container > div:last-child > div:hover {
-  opacity: 0.75;
-  cursor: pointer;
-}
-
-.nav-container a {
+a {
   text-decoration: none;
   color: white;
 }
+

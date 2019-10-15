@@ -1,9 +1,8 @@
 import React from 'react';
 
 import {connect} from "react-redux"
-//import {} from "../../actions/timestamp-actions"
 
-import {ACCENT_1, ACCENT_2} from "../../color-scheme"
+import {ACCENT_1, ACCENT_2,GREEN} from "../../color-scheme"
 import './Timestamp.css'
 
 
@@ -29,7 +28,7 @@ class Timestamp extends React.Component {
       }
 
       var createAttribute = (color, text, key) => {
-        return <div  key={key}className='attribute' style={{backgroundColor:color}}> <div className='attribute-text'>{text}</div></div>
+        return <div  key={key} className='attribute' style={{backgroundColor:color}}> <div className='attribute-text'>{text}</div></div>
       }
 
       var characters = []
@@ -54,16 +53,16 @@ class Timestamp extends React.Component {
 
       var isEpisodeLinkedOnServer = this.props.linked_videos.find(lv => lv === episode.episode_id) !== undefined
 
-      var linkedStatus = (this.props.linked_videos.find(lv => lv === episode.episode_id) !== undefined ? <div className='linkedStatus' style={{backgroundColor:ACCENT_2}}> ON SERVER</div> : null)
-
+      var linkedStatus = (this.props.linked_videos.find(lv => lv === episode.episode_id) !== undefined ? <div className='linkedStatus' style={{backgroundColor:GREEN}}>✓</div> : null)
+     
       var createTimestamp = () => {
         return <div className='timestamp'>
         <div className='inner'>
             <div className='timestamp_title'>
+            {linkedStatus}
               <div className='episodeName'>
                 {episode.episode_name}
-              </div>
-               {linkedStatus}
+              </div>              
             </div>
             <span className='start_time'>{time}</span>
              <div className='attributes'>

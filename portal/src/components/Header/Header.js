@@ -22,6 +22,9 @@ export class Header extends React.Component {
       tabs : [{
         path: '/home',
         text: 'Home'
+      },{
+        path: '/linkToEpisode',
+        text: 'Link to Episode'
       }],
       actions: [{
         text:'Logout',
@@ -43,7 +46,7 @@ export class Header extends React.Component {
     var tabs = [];
     this.state.tabs.forEach((tab, index) => {
       tabs.push( 
-        <div className='header' key={index} >
+        <div className='header link' key={index} style={{backgroundColor:ACCENT_1 }}>
             <Link to={tab.path}>{tab.text}</Link>
         </div>
         )
@@ -51,16 +54,16 @@ export class Header extends React.Component {
 
     this.state.actions.forEach((action, index)=>{
       tabs.push( 
-        <div key={this.state.tabs.length + index} onClick={action.action.bind(this)}>
-            <div className='header'>{action.text}</div>
+        <div key={this.state.tabs.length + index} onClick={action.action.bind(this)} className='header' style={{backgroundColor:ACCENT_1 }}>
+            {action.text}
         </div>
         )
     })
 
     return (
       <nav id="mainNavBar" className="nav-container">
-        <div id="navBarTitle">SCENE STAMP</div>
-        <div id="navBarHeaders" style={{backgroundColor:ACCENT_1 }}>
+        <div className="title">SCENE STAMP</div>
+        <div className="navBarHeaders" >
           {tabs}
         </div>
       </nav>

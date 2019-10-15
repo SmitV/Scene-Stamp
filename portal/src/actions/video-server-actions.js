@@ -6,11 +6,37 @@ const VIDEO_SERVER_URL = "http://ec2-18-221-3-92.us-east-2.compute.amazonaws.com
 //const VIDEO_SERVER_URL = 'http://localhost:8081'
 
 export var getLinkedVideos = (dispatch, onSucsess, onFailure) => {
-	onSucsess(['36693 ', '776671'])
+	videoServerCall(
+		dispatch,
+		"/getLinkedVideos",
+		onSucsess,
+		onFailure
+	);
+}
+
+export var getUnlinkedVideos = (dispatch, onSucsess, onFailure) => {
+	videoServerCall(
+		dispatch,
+		"/getUnlinkedVideos",
+		onSucsess,
+		onFailure
+	);
+}
+
+export var getLinkToEpisode = (dispatch, onSucsess, onFailure, queryParams) => {
+	console.log('vsa getLinkToEpisode')
+	console.log(queryParams)
+	videoServerCall(
+		dispatch,
+		"/linktoEpisode",
+		onSucsess,
+		onFailure,
+		queryParams
+	);
 }
 
 
-var videoServerCall = (dispatch, path, onSucsess, onFailure) => {
+var videoServerCall = (dispatch, path, onSucsess, onFailure,queryParams) => {
 	var options = {
 		headers: {
 			test_mode: true,
@@ -18,5 +44,5 @@ var videoServerCall = (dispatch, path, onSucsess, onFailure) => {
 		}
 	};
 
-	httpsCall(dispatch, VIDEO_SERVER_URL + path, options, onSucsess, onFailure);
+	httpsCall(dispatch, VIDEO_SERVER_URL + path, options, onSucsess, onFailure,queryParams);
 };

@@ -15,7 +15,7 @@ export var login = (dispatch, data, onSucsess, onFailure) => {
 
 	httpsCall(
 		dispatch,
-		"/login",
+		TIMESTAMP_SERVER_URL+ "/login",
 		options,
 		onSucsess,
 		onFailure

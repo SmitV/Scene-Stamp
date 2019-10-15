@@ -18,8 +18,8 @@ class Login extends React.Component {
     super(props);
       // Bindings
     this.state = {
-      username:null,
-      password:null
+      username:"",
+      password:""
     }
 
 
@@ -41,7 +41,11 @@ class Login extends React.Component {
 
   render() {
 
-    if(this.props.auth_token){
+    console.log('login render')
+
+    console.log(this.props.auth_token)
+
+    if(this.props.auth_token !== null && this.props.auth_token !== undefined){
       return (<Redirect to={{ pathname: '/home', state: { from: this.props.location } }} />)
     }
 
@@ -51,9 +55,9 @@ class Login extends React.Component {
     <div className="title"> Scene Stamp </div>
     {this.props.attempting_login ? <div> Attempting login </div> : null }
       <form onSubmit= { this.handleSubmit.bind(this) }>
-        <input type='text' name='username' value = {this.state.username} onChange={this.handleUsernameChange.bind(this)}  placeholder='username' required autocomplete='false'/>
+        <input type='text' name='username' value = {this.state.username} onChange={this.handleUsernameChange.bind(this)}  placeholder='username' required autoComplete='false'/>
         <br/>
-        <input type='password' name='passowrd' value = {this.state.password} onChange={this.handlePasswordChange.bind(this)}  placeholder='password' required autocomplete='false'/>
+        <input type='password' name='passowrd' value = {this.state.password} onChange={this.handlePasswordChange.bind(this)}  placeholder='password' required autoComplete='false'/>
         <br/>
         <button> Sign In</button>
       </form>
