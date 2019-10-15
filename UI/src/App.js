@@ -8,10 +8,6 @@ import "../node_modules/video-react/dist/video-react.css";
 import "./App.css";
 
 function App() {
-  // <Route exact path='/manual' component={Manual}>
-
-  var categories = ["Funny", "Dramatic", "Inspirational", "Cool"];
-  var characters = ["Jon", "Tyrion", "Dany", "Sansa", "Arya"];
   return (
     <div className="App">
       <Router>

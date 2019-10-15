@@ -1,6 +1,6 @@
 import React from "react";
 import { Player, ControlBar } from "video-react";
-import { Dropdown } from 'semantic-ui-react'
+import { Dropdown } from "semantic-ui-react";
 import "./App.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
@@ -23,11 +23,16 @@ export default class Home extends React.Component {
       activeClip: -1,
       inputText: "",
       awsUrl: "http://ec2-18-221-3-92.us-east-2.compute.amazonaws.com:8081/",
+      showProgress: false,
+      percentage: 0,
+      exportOrDownload: "EXPORT",
+      downloadId: null
     };
     this.handleInputText = this.handleInputText.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleClick = this.handleClick.bind(this);
     this.handleClip = this.handleClip.bind(this);
+    this.handleDownload = this.handleDownload.bind(this);
     this.play = this.play.bind(this);
     this.pause = this.pause.bind(this);
     this.load = this.load.bind(this);
@@ -43,7 +48,7 @@ export default class Home extends React.Component {
 
   load(id) {
     this.player.load();
-    this.setState({currVideo: id, path: require("./videos/" + id + ".mp4")});
+    this.setState({ currVideo: id, path: require("./videos/" + id + ".mp4") });
   }
 
   seek(seconds) {
@@ -51,13 +56,19 @@ export default class Home extends React.Component {
   }
   handleStateChange(state) {
     let map = this.state.tsMap;
-    if(state.seeking && this.state.activeClip != -1 && this.state.tsMap[this.state.activeClip].end != state.currentTime) {
+    if (
+      state.seeking &&
+      this.state.activeClip != -1 &&
+      this.state.tsMap[this.state.activeClip].end != state.currentTime
+    ) {
       map[this.state.activeClip].start = Math.round(state.currentTime);
-      map[this.state.activeClip].duration = Math.abs(map[this.state.activeClip].end - Math.round(state.currentTime));
-      this.setState({tsMap: map});
-    // } else {
-    //   map[this.state.activeClip].start = this.secondsToMinutes(Math.round(state.seekingTime));
-    //   map[this.state.activeClip].duration = this.secondsToMinutes(Math.abs(map[this.state.activeClip].end - Math.round(state.seekingTime)));
+      map[this.state.activeClip].duration = Math.abs(
+        map[this.state.activeClip].end - Math.round(state.currentTime)
+      );
+      this.setState({ tsMap: map });
+      // } else {
+      //   map[this.state.activeClip].start = this.secondsToMinutes(Math.round(state.seekingTime));
+      //   map[this.state.activeClip].duration = this.secondsToMinutes(Math.abs(map[this.state.activeClip].end - Math.round(state.seekingTime)));
     }
   }
   componentDidMount() {
@@ -84,10 +95,9 @@ export default class Home extends React.Component {
     return ret;
   }
   handleClick(e, id, tId, start) {
-    if(this.state.currVideo != id)
-      this.load(id);
+    if (this.state.currVideo != id) this.load(id);
     this.seek(start);
-    this.setState({activeClip: tId});
+    this.setState({ activeClip: tId });
   }
   handleClip(e, element) {
     e.stopPropagation();
@@ -96,29 +106,29 @@ export default class Home extends React.Component {
     picked_scene["timestamp_id"] = element["timestamp_id"];
     let scenes = this.state.picked_scenes;
     scenes.push(picked_scene);
-    this.setState({picked_scenes: scenes});
+    this.setState({ picked_scenes: scenes });
     let data = this.state.scenes;
-    for(var i = 0; i < data.length; i++) {
-      if(data[i]["timestamp_id"] == element.timestamp_id) {
+    for (var i = 0; i < data.length; i++) {
+      if (data[i]["timestamp_id"] == element.timestamp_id) {
         data.splice(i, 1);
       }
     }
-    this.setState({picked_scenes: scenes, scenes: data});
+    this.setState({ picked_scenes: scenes, scenes: data });
   }
   querySeries() {
     fetch("https://scene-stamp-server.herokuapp.com/getSeriesData")
       .then(response => response.json())
-      .then(data => this.setState({series: this.transform(data, 1)}));
+      .then(data => this.setState({ series: this.transform(data, 1) }));
   }
   queryCharacters() {
     fetch("https://scene-stamp-server.herokuapp.com/getCharacterData")
       .then(response => response.json())
-      .then(data => this.setState({characters: this.transform(data, 2)}));
+      .then(data => this.setState({ characters: this.transform(data, 2) }));
   }
   queryCategories() {
     fetch("https://scene-stamp-server.herokuapp.com/getCategoryData")
       .then(response => response.json())
-      .then(data => this.setState({categories: this.transform(data, 3)}));
+      .then(data => this.setState({ categories: this.transform(data, 3) }));
   }
   handleSeries = (e, { value }) => {
     return this.setState({ selectedSeries: value });
@@ -131,14 +141,17 @@ export default class Home extends React.Component {
   };
   handleSubmit(e) {
     e.preventDefault();
-    if(this.state.selectedSeries.length > 0) {
+    if (this.state.selectedSeries.length > 0) {
       let series_ids = "";
-      for(var i = 0; i < this.state.selectedSeries.length; i++) {
-        if(i != 0 && i < this.state.selectedSeries.length) {
-          series_ids += ',';
+      for (var i = 0; i < this.state.selectedSeries.length; i++) {
+        if (i != 0 && i < this.state.selectedSeries.length) {
+          series_ids += ",";
         }
         series_ids += this.state.selectedSeries[i];
-        fetch("https://scene-stamp-server.herokuapp.com/getEpisodeData?series_ids=" + series_ids)
+        fetch(
+          "https://scene-stamp-server.herokuapp.com/getEpisodeData?series_ids=" +
+            series_ids
+        )
           .then(resp => resp.json())
           .then(data => this.getTimestamps(data));
       }
@@ -154,43 +167,63 @@ export default class Home extends React.Component {
     entry["episode_id"] = element.episode_id;
     entry["timestamp_id"] = element.timestamp_id;
     scenes.push(entry);
-    for(let i = 0; i < data.length; i++) {
-      if(data[i]["timestamp_id"] == element.timestamp_id) {
+    for (let i = 0; i < data.length; i++) {
+      if (data[i]["timestamp_id"] == element.timestamp_id) {
         data.splice(i, 1);
       }
     }
-    this.setState({scenes: scenes, picked_scenes: data});
+    this.setState({ scenes: scenes, picked_scenes: data });
   }
   handleInputText(e) {
-    this.setState({inputText: e.target.value});
+    this.setState({ inputText: e.target.value });
+  }
+  handleDownload(e) {
+    this.setState({ showProgress: false, percentage: 0 });
+    window.open(
+      this.state.awsUrl +
+        "downloadCompilation?compilation_id=" +
+        this.state.downloadId
+    );
+    this.setState({ downloadId: null, exportOrDownload: "EXPORT" });
   }
   handleCreateVideo(e) {
     let file_name = this.state.inputText;
-    if(file_name == "") {
+    if (file_name == "") {
       alert("Please enter in a file name for this compilation!");
-    } else if(this.state.picked_scenes.length == 0) {
+    } else if (this.state.picked_scenes.length == 0) {
       alert("Please add more scenes!");
     } else {
       let comp_data = this.createCompilationData();
-      fetch(this.state.awsUrl + 'createCompilation', {
-        method: 'post',
+      fetch(this.state.awsUrl + "createCompilation", {
+        method: "post",
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Content-Type': 'application/json'
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(comp_data)
-      }).then(res => res.json())
+      })
+        .then(res => res.json())
         .then(data => this.pollStatus(data));
     }
   }
   pollStatus(data) {
-    const id = data.compilation_id;
+    this.setState({ showProgress: true });
+    this.setState({ downloadId: data.compilation_id });
     this.interval = setInterval(() => {
-      fetch(this.state.awsUrl + "getCompilationStatus?compilation_id=" + id)
+      fetch(
+        this.state.awsUrl +
+          "getCompilationStatus?compilation_id=" +
+          data.compilation_id
+      )
+        .then(res => res.json())
         .then(res => {
-          return res.json();
-        })
-        .then(res => console.log(res));
+          if (res.completed) {
+            this.setState({ percentage: 100, exportOrDownload: "DL" });
+            clearInterval(this.interval);
+          } else {
+            this.setState({ percentage: res.percentage * 100 });
+          }
+        });
     }, 2000);
     // res => {
     //   this.setState({
@@ -203,8 +236,13 @@ export default class Home extends React.Component {
     let ret = {};
     let timestamps = [];
     debugger;
-    for(let i = 0; i < data.length; i++) {
-      timestamps.push({episode_id: data[i].episode_id, start_time: data[i].start, duration: data[i].duration, timestamp_id: data[i].timestamp_id});
+    for (let i = 0; i < data.length; i++) {
+      timestamps.push({
+        episode_id: data[i].episode_id,
+        start_time: data[i].start,
+        duration: data[i].duration,
+        timestamp_id: data[i].timestamp_id
+      });
     }
     ret["compilation_name"] = this.state.inputText;
     ret["timestamps"] = timestamps;
@@ -212,61 +250,69 @@ export default class Home extends React.Component {
   }
   getTimestamps(data) {
     let query_str = "";
-    if(data.length > 0) {
+    if (data.length > 0) {
       query_str += "episode_ids=";
-      for(let i = 0; i < data.length; i++) {
-        if(i != 0 && i < data.length)
-          query_str += ","
+      for (let i = 0; i < data.length; i++) {
+        if (i != 0 && i < data.length) query_str += ",";
         query_str += data[i].episode_id;
       }
     }
-    if(this.state.selectedCharacters.length > 0) {
-      if(data.length > 0)
-        query_str += "&";
+    if (this.state.selectedCharacters.length > 0) {
+      if (data.length > 0) query_str += "&";
       query_str += "character_ids=";
-      for(let i = 0; i < this.state.selectedCharacters.length; i++) {
-        if(i != 0 && i < this.state.selectedCharacters.length)
-          query_str += ","
+      for (let i = 0; i < this.state.selectedCharacters.length; i++) {
+        if (i != 0 && i < this.state.selectedCharacters.length)
+          query_str += ",";
         query_str += this.state.selectedCharacters[i];
       }
     }
-    if(this.state.selectedCategories.length > 0) {
-      if(data.length > 0 || this.state.selectedCharacters.length > 0)
+    if (this.state.selectedCategories.length > 0) {
+      if (data.length > 0 || this.state.selectedCharacters.length > 0)
         query_str += "&";
       query_str += "category_ids=";
-      for(let i = 0; i < this.state.selectedCategories.length; i++) {
-        if(i != 0 && i < this.state.selectedCategories.length)
-          query_str += ","
+      for (let i = 0; i < this.state.selectedCategories.length; i++) {
+        if (i != 0 && i < this.state.selectedCategories.length)
+          query_str += ",";
         query_str += this.state.selectedCategories[i];
       }
     }
-    fetch("https://scene-stamp-server.herokuapp.com/getTimestampData?" + query_str)
+    fetch(
+      "https://scene-stamp-server.herokuapp.com/getTimestampData?" + query_str
+    )
       .then(resp => resp.json())
       .then(data => this.createMap(data));
   }
   createMap(data) {
     let map = {};
-    for(let i = 0; i < data.length; i++) {
-      map[data[i].timestamp_id] = {start: 0, duration: 0, end: data[i].start_time};
+    for (let i = 0; i < data.length; i++) {
+      map[data[i].timestamp_id] = {
+        start: 0,
+        duration: 0,
+        end: data[i].start_time
+      };
     }
-    this.setState({scenes: data, tsMap: map});
+    this.setState({ scenes: data, tsMap: map });
   }
   transform(data, num) {
     let id = "";
     let text = "";
     let ret_data = [];
-    if(num == 1) {
+    if (num == 1) {
       id = "series_id";
       text = "series_name";
-    } else if(num == 2) {
+    } else if (num == 2) {
       id = "character_id";
       text = "character_name";
     } else {
       id = "category_id";
       text = "category_name";
     }
-    for(var i = 0; i < data.length; i++) {
-      ret_data.push({key: data[i][id], value: data[i][id], text: data[i][text]});
+    for (var i = 0; i < data.length; i++) {
+      ret_data.push({
+        key: data[i][id],
+        value: data[i][id],
+        text: data[i][text]
+      });
     }
     return ret_data;
   }
@@ -284,7 +330,7 @@ export default class Home extends React.Component {
               selection
               options={this.state.series}
               onChange={this.handleSeries}
-              placeholder='Select Series'
+              placeholder="Select Series"
             />
           </div>
           <div className="scenes-dropdown">
@@ -296,7 +342,7 @@ export default class Home extends React.Component {
               selection
               options={this.state.characters}
               onChange={this.handleCharacters}
-              placeholder='Select Characters'
+              placeholder="Select Characters"
             />
           </div>
           <div className="scenes-dropdown">
@@ -308,48 +354,118 @@ export default class Home extends React.Component {
               selection
               options={this.state.categories}
               onChange={this.handleCategories}
-              placeholder='Select Categories'
+              placeholder="Select Categories"
             />
           </div>
-          <button className="scenes-btn" onClick={this.handleSubmit}>Get Scenes</button>
+          <button className="scenes-btn" onClick={this.handleSubmit}>
+            Get Scenes
+          </button>
         </div>
         <div className="scenes-container">
           <h3>Pick Scenes</h3>
           <div className="scenes-potential">
             {this.state.scenes.map(element => (
-              <div onClick={(e) => this.handleClick(e, element.episode_id, element.timestamp_id, element.start_time)}
-               className={element.timestamp_id == this.state.activeClip ? "active-clip scene-container" : "scene-container"}>
+              <div
+                onClick={e =>
+                  this.handleClick(
+                    e,
+                    element.episode_id,
+                    element.timestamp_id,
+                    element.start_time
+                  )
+                }
+                className={
+                  element.timestamp_id == this.state.activeClip
+                    ? "active-clip scene-container"
+                    : "scene-container"
+                }
+              >
                 <div>{element.episode_id}</div>
                 <div>
                   <div className="scene-start-time">
-                    <span>Start: {this.secondsToMinutes(this.state.tsMap[element.timestamp_id].start)}</span>
-                    <span>End: {this.secondsToMinutes(element.start_time)}</span>
-                    <span>Duration: {this.secondsToMinutes(this.state.tsMap[element.timestamp_id].duration)}</span>
+                    <span>
+                      Start:{" "}
+                      {this.secondsToMinutes(
+                        this.state.tsMap[element.timestamp_id].start
+                      )}
+                    </span>
+                    <span>
+                      End: {this.secondsToMinutes(element.start_time)}
+                    </span>
+                    <span>
+                      Duration:{" "}
+                      {this.secondsToMinutes(
+                        this.state.tsMap[element.timestamp_id].duration
+                      )}
+                    </span>
                   </div>
                   <div>
-                    <FontAwesomeIcon onClick={(e) => this.handleClip(e, element)} icon={faCheck} className="icon-check icons" />
+                    <FontAwesomeIcon
+                      onClick={e => this.handleClip(e, element)}
+                      icon={faCheck}
+                      className="icon-check icons"
+                    />
                   </div>
                 </div>
-            </div>
+              </div>
             ))}
           </div>
           <div className="picked-header">
-            <input placeholder="Video Name..." value={this.state.inputText} onChange={this.handleInputText} ></input>
-            <button onClick={(e) => this.handleCreateVideo(e)}>EXPORT</button>
+            <input
+              placeholder="Video Name..."
+              value={this.state.inputText}
+              onChange={this.handleInputText}
+            />
+            <button
+              onClick={e =>
+                this.state.exportOrDownload == "EXPORT"
+                  ? this.handleCreateVideo(e)
+                  : this.handleDownload(e)
+              }
+            >
+              {this.state.exportOrDownload}
+            </button>
+            {this.state.showProgress ? (
+              <div className="w3-light-grey">
+                <div
+                  className="w3-green"
+                  style={{ width: this.state.percentage + "%" }}
+                />
+              </div>
+            ) : null}
           </div>
           <div className="scenes-picked">
             {this.state.picked_scenes.map(element => (
-                <div onClick={(e) => this.handleClick(e, element.episode_id, element.timestamp_id, element.start)}
-                className={element.timestamp_id == this.state.activeClip ? "active-clip scene-container" : "scene-container"}>
+              <div
+                onClick={e =>
+                  this.handleClick(
+                    e,
+                    element.episode_id,
+                    element.timestamp_id,
+                    element.start
+                  )
+                }
+                className={
+                  element.timestamp_id == this.state.activeClip
+                    ? "active-clip scene-container"
+                    : "scene-container"
+                }
+              >
                 <div>{element.episode_id}</div>
                 <div>
                   <div className="scene-start-time">
                     <span>Start: {this.secondsToMinutes(element.start)}</span>
                     <span>End: {this.secondsToMinutes(element.end)}</span>
-                    <span>Duration: {this.secondsToMinutes(element.duration)}</span>
+                    <span>
+                      Duration: {this.secondsToMinutes(element.duration)}
+                    </span>
                   </div>
                   <div>
-                      <FontAwesomeIcon onClick={(e) => this.handleRemove(e, element)} icon={faTimes} className="icon-close icons" />
+                    <FontAwesomeIcon
+                      onClick={e => this.handleRemove(e, element)}
+                      icon={faTimes}
+                      className="icon-close icons"
+                    />
                   </div>
                 </div>
               </div>
