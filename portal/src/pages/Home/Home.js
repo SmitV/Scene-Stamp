@@ -9,10 +9,11 @@ import './Home.css'
 
 class Home extends React.Component {
   render () {
-    return (<div className="Home">
+    return (
+      <div className="Home">
         <Compilation_List /><br/>
         <div className='timestampList'>
-        <Timestamp_List />
+          <Timestamp_List />
         </div>
     </div>)
   }

@@ -1,11 +1,14 @@
 import {
 	API_NEW_REQUEST,
 	API_REQUEST_ERROR,
-	CLEAR_ALL_ERRORS
+	CLEAR_ALL_ERRORS,
+	SUCSESS_INFO,
+	RESET_SUCSESS_INFO
 } from '../actions/action-types'
 
 const initialState = {
-	error:null
+	error:null,
+	sucsess_info: null
 };
 
 function notificationReducer(state = initialState, action) {
@@ -21,6 +24,16 @@ function notificationReducer(state = initialState, action) {
 		case CLEAR_ALL_ERRORS:
 			return {
 				...initialState
+			}
+		case SUCSESS_INFO:
+			return {
+				...state,
+				sucsess_info:action.payload
+			}
+		case RESET_SUCSESS_INFO:
+			return {
+				...state,
+				sucsess_info:null
 			}
 		default:
 			return state

@@ -1,18 +1,13 @@
 import React from "react";
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route ,Switch,Redirect} from "react-router-dom";
 
 import {Provider} from "react-redux"
 import store from "./store"
 
 import {PRIMARY} from "./color-scheme"
 
-//Components
-import Header from "./components/Header/Header"
-
 //Pages
 import Page from "./pages/Page"
-import Home from "./pages/Home/Home";
-import Login from "./pages/Login/Login";
 
 import "./App.css";
 
@@ -23,11 +18,14 @@ class App extends React.Component {
 
     return (
       <Provider store={store}>
-        <div className="App" style={{backgroundColor:PRIMARY }}>
+        <div className="App">
           <Router>
-            <Header />
-            <Page  path="/home" component={Home} />
-            <Route path="/login" component={Login} />
+            <Switch>
+            <Page path="/linkToEpisode" />
+            <Page path="/home" />
+            <Page path="/login" />
+            <Redirect to={{ pathname: '/home', state: { from: this.props.location } }} />
+            </Switch>
           </Router>
         </div>
       </Provider>

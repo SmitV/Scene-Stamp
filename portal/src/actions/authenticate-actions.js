@@ -14,6 +14,8 @@ export var getLocalAuthToken = () => dispatch => {
 }
 
 export var loginWithCredentials = (data) => dispatch => {
+	console.log('login with creds')
+	console.log(data)
 	dispatch({
 		type:LOGIN_REQUEST_STATUS,
 		payload:true
