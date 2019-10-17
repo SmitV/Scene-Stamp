@@ -49,7 +49,10 @@ class Home extends React.Component {
 
   load(id) {
     this.player.load();
-    this.setState({ currVideo: id, path: require("./videos/" + id + ".mp4") });
+    this.setState({
+      currVideo: id,
+      path: require("../../../../../episodeVideos/" + id + ".mp4")
+    });
   }
 
   seek(seconds) {

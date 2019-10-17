@@ -60,7 +60,9 @@ export class Header extends React.Component {
 
     return (
       <nav className="main-nav">
-        <div>SCENE STAMP</div>
+        <div>
+          <a href="/home">SCENE STAMP</a>
+        </div>
         <div>
           <div>
             <a href="/home">Home</a>
