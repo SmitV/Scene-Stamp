@@ -1,35 +1,42 @@
-
-
-.nav-container {
+.main-nav {
   height: 75px;
   width: 100%;
-  margin-left:1rem 5rem 0rem;
+  margin: 0;
+  background-color: black;
   color: white;
+  font-family: Lato, "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
 
+.main-nav > div {
+  line-height: 75px;
+}
 
-.title {
+.main-nav > div:first-child {
   float: left;
+  font-size: 24px;
   font-weight: bold;
+  font-style: italic;
   margin-left: 2rem;
 }
 
-.navBarHeaders{
-  display:flex;
-  float:right;
-  height:fill;
+.main-nav > div:last-child {
+  float: right;
+  margin-right: 2rem;
 }
 
-.header{
-  padding: 1px 5px 1px;
-  top:30px;
-  margin-left:15px;
-  height:fill;
-  border-radius: 25px;
+.main-nav > div:last-child > div {
+  float: left;
+  width: 100px;
+  text-align: center;
 }
 
-a {
+.main-nav > div:last-child > div:hover {
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.main-nav a {
   text-decoration: none;
   color: white;
+  padding: 2rem;
 }
-
