@@ -52,7 +52,7 @@ class Home extends React.Component {
     this.player.load();
     this.setState({
       currVideo: id,
-      path: require("../../../../../episodeVideos/" + id + ".mp4")
+      path: require("../../../../../../episodeVideos/" + id + ".mp4")
     });
   }
 
@@ -74,9 +74,6 @@ class Home extends React.Component {
         map[this.state.activeClip].end - map[this.state.activeClip].start
       );
       this.setState({ tsMap: map });
-      // } else {
-      //   map[this.state.activeClip].start = this.secondsToMinutes(Math.round(state.seekingTime));
-      //   map[this.state.activeClip].duration = this.secondsToMinutes(Math.abs(map[this.state.activeClip].end - Math.round(state.seekingTime)));
     }
   }
   componentDidMount() {

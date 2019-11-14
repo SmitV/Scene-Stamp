@@ -125,7 +125,7 @@ class Live extends React.Component {
       .then(data => {
         if ("videos" in data && data.videos.indexOf(id.toString()) != -1) {
           this.setState({
-            path: require("../../../../../episodeVideos/" + id + ".mp4"),
+            path: require("../../../../../../episodeVideos/" + id + ".mp4"),
             loaded: true
           });
           this.player.subscribeToStateChange(this.handleStateChange.bind(this));
