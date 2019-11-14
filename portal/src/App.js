@@ -6,6 +6,8 @@ import {
   Redirect
 } from "react-router-dom";
 import "../node_modules/video-react/dist/video-react.css"; // import css
+import "react-date-range/dist/styles.css"; // main style file
+import "react-date-range/dist/theme/default.css"; // theme css file
 
 import { Provider } from "react-redux";
 import store from "./store";

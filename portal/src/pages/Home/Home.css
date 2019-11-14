@@ -98,7 +98,7 @@
 }
 
 .scene-container > div:last-child {
-  padding-top: 12px;
+  padding-top: 8px;
   font-size: 12px;
 }
 
@@ -169,4 +169,11 @@
   background: green;
   width: 0%;
   height: inherit;
+}
+
+.scene-time-active {
+  background-color: #048e04;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 3px;
 }

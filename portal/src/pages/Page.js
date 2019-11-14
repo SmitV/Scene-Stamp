@@ -33,7 +33,7 @@ class Page extends React.Component {
       innerPages: [
         { path: "/home", component: <Home /> },
         { path: "/linkToEpisode", component: <LinkToEpisode /> },
-        { path: "/link", component: <Live /> }
+        { path: "/live", component: <Live /> }
       ],
       outerPages: [{ path: "/login", component: <Login /> }]
     };

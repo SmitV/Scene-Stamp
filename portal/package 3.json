@@ -11,8 +11,6 @@
     "enzyme-adapter-react-16": "^1.14.0",
     "mocha": "^6.2.1",
     "react": "^16.10.2",
-    "react-calendar-date-range-picker": "^0.9.6",
-    "react-date-range": "^1.0.0-beta",
     "react-dom": "^16.10.2",
     "react-redux": "^7.1.1",
     "react-router-dom": "^5.0.1",

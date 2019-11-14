@@ -27,7 +27,8 @@ class Home extends React.Component {
       showProgress: false,
       percentage: 0,
       exportOrDownload: "EXPORT",
-      downloadId: null
+      downloadId: null,
+      activeTime: "START"
     };
     this.handleInputText = this.handleInputText.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -65,9 +66,12 @@ class Home extends React.Component {
       this.state.activeClip != -1 &&
       this.state.tsMap[this.state.activeClip].end != state.currentTime
     ) {
-      map[this.state.activeClip].start = Math.round(state.currentTime);
+      debugger;
+      if (this.state.activeTime === "START")
+        map[this.state.activeClip].start = Math.round(state.currentTime);
+      else map[this.state.activeClip].end = Math.round(state.currentTime);
       map[this.state.activeClip].duration = Math.abs(
-        map[this.state.activeClip].end - Math.round(state.currentTime)
+        map[this.state.activeClip].end - map[this.state.activeClip].start
       );
       this.setState({ tsMap: map });
       // } else {
@@ -101,7 +105,7 @@ class Home extends React.Component {
   handleClick(e, id, tId, start) {
     if (this.state.currVideo != id) this.load(id);
     this.seek(start);
-    this.setState({ activeClip: tId });
+    this.setState({ activeClip: tId, activeTime: "START" });
   }
   handleClip(e, element) {
     e.stopPropagation();
@@ -387,14 +391,43 @@ class Home extends React.Component {
                 <div>{element.episode_id}</div>
                 <div>
                   <div className="scene-start-time">
-                    <span>
+                    <span
+                      className={
+                        this.state.activeTime === "START" &&
+                        element.timestamp_id == this.state.activeClip
+                          ? "scene-time-active"
+                          : ""
+                      }
+                      onClick={e => {
+                        if (element.timestamp_id == this.state.activeClip) {
+                          e.stopPropagation();
+                          this.setState({ activeTime: "START" });
+                        }
+                      }}
+                    >
                       Start:{" "}
                       {this.secondsToMinutes(
                         this.state.tsMap[element.timestamp_id].start
                       )}
                     </span>
-                    <span>
-                      End: {this.secondsToMinutes(element.start_time)}
+                    <span
+                      className={
+                        this.state.activeTime === "END" &&
+                        element.timestamp_id == this.state.activeClip
+                          ? "scene-time-active"
+                          : ""
+                      }
+                      onClick={e => {
+                        if (element.timestamp_id == this.state.activeClip) {
+                          e.stopPropagation();
+                          this.setState({ activeTime: "END" });
+                        }
+                      }}
+                    >
+                      End:{" "}
+                      {this.secondsToMinutes(
+                        this.state.tsMap[element.timestamp_id].end
+                      )}
                     </span>
                     <span>
                       Duration:{" "}
