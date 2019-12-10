@@ -2,8 +2,9 @@ import React from "react";
 import { Redirect } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
-
+import { Dropdown } from "semantic-ui-react";
 import { getEpisodeData } from "../../actions/timestamp-actions";
+import { Player, ControlBar } from "video-react";
 import {
   getLinkedVideos,
   getUnlinkedVideos,
@@ -29,7 +30,12 @@ class LinkToEpisode extends React.Component {
     super(props);
     this.state = {
       selectedUnlinkedName: null,
-      selectedEpisodeId: null
+      selectedEpisodeId: null,
+      linked: [],
+      videos: [],
+      selectedVideo: null,
+      selectedLinked: null,
+      path: ""
     };
   }
 
@@ -69,56 +75,48 @@ class LinkToEpisode extends React.Component {
     });
   }
 
+  unlinkedVideos() {
+    const unlinkedVideos = [];
+    this.props.unlinked_videos.forEach(vid =>
+      unlinkedVideos.push({ value: vid, key: vid, text: vid })
+    );
+    return unlinkedVideos;
+  }
+
+  linkedVideos() {
+    const x = this.props.episode_data
+      .filter(ep => this.props.linked_videos.includes(ep.episode_id) === false)
+      .map(ep => this.createEpisodeObject(ep));
+    return x;
+  }
+
+  createEpisodeObject(ep) {
+    return {
+      value: ep.episode_name,
+      text: ep.episode_name,
+      key: ep.episode_id,
+      youtube_id: ep.youtube_id
+    };
+  }
+
+  handleUnlinked(value, data) {
+    debugger;
+    this.setState({
+      selectedVideo: value,
+      path: require("../../../../../../unlinkedVideos/" + data.value + ".mov")
+    });
+    this.player.load();
+  }
+
+  handleLinked(value, data) {
+    const currentOption = data.options.find(o => o.value === data.value);
+    this.setState({ selectedLinked: currentOption });
+  }
+
   render() {
     if (this.props.link_to_episode) {
       this.reset();
     }
-
-    var unlinkedVideos = () => {
-      return this.props.unlinked_videos.map(vid => createUnlinkedOption(vid));
-    };
-
-    var createUnlinkedOption = uv => {
-      var classes = "option selectionOption";
-      if (uv === this.state.selectedUnlinkedName) classes += " selectedOption";
-
-      return (
-        <div className={classes} onClick={() => this.updateUnlinkedVid(uv)}>
-          {uv}
-        </div>
-      );
-    };
-
-    var linkedVideos = () => {
-      return this.props.episode_data
-        .filter(
-          ep => this.props.linked_videos.includes(ep.episode_id) === false
-        )
-        .map(ep => createEpisodeOption(ep));
-    };
-
-    var createEpisodeOption = ep => {
-      var classes = "option epOption selectionOption";
-      if (ep.episode_id === this.state.selectedEpisodeId)
-        classes += " selectedOption";
-
-      return (
-        <div
-          className={classes}
-          onClick={() => this.updateSelectEpisodeId(ep.episode_id)}
-        >
-          <div className="epName">{ep.episode_name}</div>
-          {ep.youtube_id !== null ? (
-            <a
-              href={"https://www.youtube.com/watch?v=" + ep.youtube_id}
-              target="_blank"
-            >
-              <FontAwesomeIcon icon={faYoutube} className="icon-youtube" />
-            </a>
-          ) : null}
-        </div>
-      );
-    };
 
     var createInfoMsg = info => {
       return (
@@ -140,23 +138,88 @@ class LinkToEpisode extends React.Component {
       );
     };
 
+    if (this.props.episode_data.length > 0 && this.state.linked.length == 0) {
+      this.setState({ linked: this.linkedVideos() });
+    }
+
+    if (
+      this.props.unlinked_videos.length > 0 &&
+      this.state.videos.length == 0
+    ) {
+      this.setState({ videos: this.unlinkedVideos() });
+    }
+
     return (
       <div className="linkToEpisode">
         <div className="main-container">
           <div className="section">
-            <div className="sectionTitle"> Unlinked Videos </div>
-            {createInfoMsg("Select an Unlinked Video")}
-            <div className="innerSection">{unlinkedVideos()}</div>
+            <div className="innerSection">
+              <Dropdown
+                fluid
+                search
+                selection
+                options={this.state.videos}
+                onChange={this.handleUnlinked.bind(this)}
+                placeholder="Select Video"
+              />
+            </div>
           </div>
           <div className="section">
-            <div className="sectionTitle"> Episodes </div>
-            {createInfoMsg(
-              "Select an Episode(these episodes are NOT on the video server)"
-            )}
-            <div className="innerSection">{linkedVideos()}</div>
+            <div className="innerSection">
+              <Dropdown
+                fluid
+                search
+                selection
+                options={this.state.linked}
+                onChange={this.handleLinked.bind(this)}
+                placeholder="Select Video"
+              />
+            </div>{" "}
           </div>
         </div>
-        <center>{createButton()}</center>
+        <div className="link-submit-div">
+          <Player
+            ref={player => {
+              this.player = player;
+            }}
+            autoPlay
+          >
+            <source src={this.state.path} />
+            <ControlBar autoHide={false} />
+          </Player>
+          <div>
+            {this.state.selectedVideo !== null &&
+            this.state.selectedLinked !== null ? (
+              <div>
+                <button
+                  className="submitButton enabled"
+                  onClick={() => this.submit()}
+                >
+                  {" "}
+                  Link Episode{" "}
+                </button>
+              </div>
+            ) : (
+              <button className="submitButton option disabled">
+                {" "}
+                Link Episode{" "}
+              </button>
+            )}
+            {this.state.selectedLinked &&
+            this.state.selectedLinked.youtube_id !== null ? (
+              <a
+                href={
+                  "https://www.youtube.com/watch?v=" +
+                  this.state.selectedLinked.youtube_id
+                }
+                target="_blank"
+                className="scene-yt-link"
+              >
+                <FontAwesomeIcon icon={faYoutube} className="icon-youtube" />
+              </a>
+            ) : null}
+          </div>
+        </div>
       </div>
     );
   }

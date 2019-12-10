@@ -28,7 +28,9 @@ class Home extends React.Component {
       percentage: 0,
       exportOrDownload: "EXPORT",
       downloadId: null,
-      activeTime: "START"
+      activeTime: "START",
+      logo: "",
+      logos: []
     };
     this.handleInputText = this.handleInputText.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -80,6 +82,7 @@ class Home extends React.Component {
     this.querySeries();
     this.queryCharacters();
     this.queryCategories();
+    this.queryLogos();
     this.player.subscribeToStateChange(this.handleStateChange.bind(this));
   }
   secondsToMinutes(time) {
@@ -134,6 +137,18 @@ class Home extends React.Component {
     fetch("https://scene-stamp-server.herokuapp.com/getCategoryData")
       .then(response => response.json())
       .then(data => this.setState({ categories: this.transform(data, 3) }));
+  }
+  queryLogos() {
+    fetch(this.state.awsUrl + "getLogos")
+      .then(resp => resp.json())
+      .then(data => this.createLogoMap(data.logo_names));
+  }
+  createLogoMap(logos) {
+    let logoMap = [];
+    logos.forEach(logo => {
+      logoMap.push({ key: logo, value: logo, text: logo });
+    });
+    this.setState({ logos: logoMap });
   }
   handleSeries = (e, { value }) => {
     return this.setState({ selectedSeries: value });
@@ -251,6 +266,7 @@ class Home extends React.Component {
     }
     ret["compilation_name"] = this.state.inputText;
     ret["timestamps"] = timestamps;
+    ret["logo"] = this.state.logo;
     return ret;
   }
   getTimestamps(data) {
@@ -445,6 +461,15 @@ class Home extends React.Component {
             ))}
           </div>
           <div className="picked-header">
+            <div>
+              <Dropdown
+                placeholder="Logo"
+                search
+                selection
+                options={this.state.logos}
+                onChange={(e, value) => this.setState({ logo: value.value })}
+              />
+            </div>
             <input
               placeholder="Video Name..."
               value={this.state.inputText}

@@ -35,13 +35,9 @@
 .picked-header {
   font-weight: bold;
   font-size: 18px;
-  height: 50px;
   line-height: 50px;
   margin-bottom: 0.5rem;
-}
-
-.picked-header div {
-  float: left;
+  width: 400px;
 }
 
 .picked-header button {
