@@ -73,6 +73,9 @@ export class Header extends React.Component {
           <div>
             <a href="/live">Live</a>
           </div>
+          <div>
+            <a href="/compilations">Compilations</a>
+          </div>
           {tabs}
         </div>
       </nav>

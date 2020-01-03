@@ -1,0 +1,12 @@
+.compilations-container {
+  display: flex;
+  margin-top: 2rem;
+  margin-left: 2rem;
+}
+
+.compilations-list {
+  border: 2px solid gray;
+  margin-right: 1.5rem;
+  height: 70vh;
+  width: 200px;
+}

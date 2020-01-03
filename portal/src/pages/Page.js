@@ -14,6 +14,7 @@ import Home from "./Home/Home";
 import LinkToEpisode from "./LinkToEpisode/LinkToEpisode";
 import Login from "./Login/Login";
 import Live from "./Live/Live";
+import Compilations from "./Compilations/Compilations";
 
 //redux
 import { connect } from "react-redux";
@@ -33,7 +34,8 @@ class Page extends React.Component {
       innerPages: [
         { path: "/home", component: <Home /> },
         { path: "/linkToEpisode", component: <LinkToEpisode /> },
-        { path: "/live", component: <Live /> }
+        { path: "/live", component: <Live /> },
+        { path: "/Compilations", component: <Compilations /> }
       ],
       outerPages: [{ path: "/login", component: <Login /> }]
     };

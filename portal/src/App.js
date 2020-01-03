@@ -30,6 +30,7 @@ class App extends React.Component {
               <Page path="/home" />
               <Page path="/login" />
               <Page path="/live" />
+              <Page path="/Compilations" />
               <Redirect
                 to={{ pathname: "/home", state: { from: this.props.location } }}
               />

@@ -23,7 +23,7 @@ class Home extends React.Component {
       tsMap: {},
       activeClip: -1,
       inputText: "",
-      awsUrl: "http://ec2-18-221-3-92.us-east-2.compute.amazonaws.com:8081/",
+      awsUrl: "http://ec2-3-135-195-36.us-east-2.compute.amazonaws.com:8081/",
       showProgress: false,
       percentage: 0,
       exportOrDownload: "EXPORT",
@@ -52,9 +52,10 @@ class Home extends React.Component {
 
   load(id) {
     this.player.load();
+    debugger;
     this.setState({
       currVideo: id,
-      path: "/static/media/episodeVideos/" + id + ".mp4"
+      path: "/../../../../episodeVideos/" + id + ".mp4"
     });
   }
 

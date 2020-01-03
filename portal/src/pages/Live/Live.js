@@ -30,7 +30,7 @@ class Live extends React.Component {
       selectedGame: null,
       currTimestamps: [],
       multiplier: 0,
-      awsUrl: "http://ec2-18-221-3-92.us-east-2.compute.amazonaws.com:8081/",
+      awsUrl: "http://ec2-3-135-195-36.us-east-2.compute.amazonaws.com:8081/",
       path: "",
       loaded: false,
       bigMoments: [],
