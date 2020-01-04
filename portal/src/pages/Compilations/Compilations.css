@@ -10,3 +10,17 @@
   height: 70vh;
   width: 200px;
 }
+
+.compilations-list div {
+  height: 30px;
+  line-height: 30px;
+  border-bottom: 1px solid gray;
+  padding-left: 0.5rem;
+  cursor: pointer !important;
+}
+
+.compilations-list .selected-compilation {
+  background: #2898de;
+  color: white;
+  font-weight: bold;
+}

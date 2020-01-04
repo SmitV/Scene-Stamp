@@ -17,9 +17,8 @@ class Compilations extends React.Component {
 
   load(id) {
     this.player.load();
-    debugger;
     this.setState({
-      currVideo: id,
+      selectedCompilation: id,
       path: "/../../../../compilationVideos/" + id + ".mp4"
     });
   }
@@ -35,7 +34,7 @@ class Compilations extends React.Component {
   getCompilationVideos() {
     fetch(this.state.url + "getCompilationVideos")
       .then(response => response.json())
-      .then(data => this.populateVideos(data));
+      .then(data => this.populateVideos(data.videos));
   }
 
   populateVideos(data) {
@@ -50,7 +49,16 @@ class Compilations extends React.Component {
           <h3>Select Video</h3>
           <div className="compilations-list">
             {this.state.videos.map(element => (
-              <div onClick={e => this.selectVideo(e)}>element.id</div>
+              <div
+                onClick={e => this.load(element)}
+                className={
+                  this.state.selectedCompilation == element
+                    ? "selected-compilation"
+                    : ""
+                }
+              >
+                {element}
+              </div>
             ))}
           </div>
         </div>
