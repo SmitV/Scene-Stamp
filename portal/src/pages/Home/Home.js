@@ -55,7 +55,7 @@ class Home extends React.Component {
     debugger;
     this.setState({
       currVideo: id,
-      path: "/../../../../episodeVideos/" + id + ".mp4"
+      path: require("../../../../../../episodeVideos/" + id + ".mp4")
     });
   }
 
