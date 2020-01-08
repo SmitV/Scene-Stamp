@@ -30,6 +30,7 @@ function prefillData(link) {
 
 function keyHandler(e) {
   if (e.keyCode === 112 && notFocusing()) {
+    debugger;
     addTimestamp(Math.floor(currVideo.currentTime));
   } else if (
     e.keyCode === 101 &&
@@ -59,7 +60,7 @@ function notFocusing() {
   return (
     document.activeElement !=
       document.getElementsByClassName("ytd-searchbox")[2] &&
-    (document.activeElement.id != "scene-stamp-categories-selectized" ||
+    (document.activeElement.id != "scene-stamp-categories-selectized" &&
       document.activeElement.id != "scene-stamp-characters-selectized")
   );
 }
