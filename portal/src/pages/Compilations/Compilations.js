@@ -41,7 +41,6 @@ class Compilations extends React.Component {
     this.setState({ videos: data });
   }
 
-  selectVideo(e) {}
   render() {
     return (
       <div className="compilations-container">
