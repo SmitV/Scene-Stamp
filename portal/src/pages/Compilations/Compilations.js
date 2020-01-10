@@ -19,7 +19,7 @@ class Compilations extends React.Component {
     this.player.load();
     this.setState({
       selectedCompilation: id,
-      path: "/../../../../compilationVideos/" + id + ".mp4"
+      path: process.env.PUBLIC_URL + "/compilationVideos/" + id + ".mp4"
     });
   }
 

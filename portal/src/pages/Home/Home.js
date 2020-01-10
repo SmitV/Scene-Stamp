@@ -52,7 +52,6 @@ class Home extends React.Component {
 
   load(id) {
     this.player.load();
-    debugger;
     this.setState({
       currVideo: id,
       path: process.env.PUBLIC_URL + "/episodeVideos/" + id + ".mp4"
@@ -245,12 +244,7 @@ class Home extends React.Component {
             this.setState({ percentage: res.percentage * 100 });
           }
         });
-    }, 2000);
-    // res => {
-    //   this.setState({
-    //     vid_status: res.percentage
-    //   });
-    // }
+    }, 15000);
   }
   createCompilationData() {
     let data = this.state.picked_scenes;
