@@ -2,4 +2,4 @@
 
 ## SceneStamp
 
-We about to make a couple mil by compiling all these vids
+An automated content creation tool that scales well with newly sourced content. 
