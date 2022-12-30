@@ -9,7 +9,7 @@
     "chai": "^4.2.0",
     "enzyme": "^3.10.0",
     "enzyme-adapter-react-16": "^1.14.0",
-    "mocha": "^6.2.1",
+    "mocha": "^10.2.0",
     "react": "^16.10.2",
     "react-calendar-date-range-picker": "^0.9.6",
     "react-date-range": "^1.0.0-beta",
